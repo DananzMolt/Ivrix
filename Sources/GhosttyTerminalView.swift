@@ -1210,6 +1210,19 @@ class GhosttyApp {
         }
         #endif
         loadCJKFontFallbackIfNeeded(config)
+        // Ivrix Hebrew/BIDI defaults: bidi rendering on, bundled Latin +
+        // Hebrew monospace fonts, slight thickening for Hebrew readability.
+        loadInlineGhosttyConfig(
+            """
+            bidi = true
+            font-family = Maple Mono NF
+            font-family = Miriam Mono CLM
+            font-thicken = true
+            """,
+            into: config,
+            prefix: "cmux-hebrew-bidi",
+            logLabel: "hebrew bidi defaults"
+        )
         let renderingModeChanged = setUsesHostLayerBackground(
             true,
             source: "loadDefaultConfigFilesWithLegacyFallback"
