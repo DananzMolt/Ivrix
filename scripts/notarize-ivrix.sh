@@ -51,7 +51,12 @@ echo "==> notary profile: $NOTARY_PROFILE"
 # --- fetch ad-hoc zip from the release ---
 rm -rf "$WORK"; mkdir -p "$WORK"
 echo "==> downloading Ivrix.zip from $RELEASE_REPO@$RELEASE_TAG"
-gh release download "$RELEASE_TAG" --repo "$RELEASE_REPO" --pattern Ivrix.zip --dir "$WORK" --clobber
+if command -v gh >/dev/null 2>&1; then
+  gh release download "$RELEASE_TAG" --repo "$RELEASE_REPO" --pattern Ivrix.zip --dir "$WORK" --clobber
+else
+  curl -fL -o "$WORK/Ivrix.zip" \
+    "https://github.com/$RELEASE_REPO/releases/download/$RELEASE_TAG/Ivrix.zip"
+fi
 ditto -x -k "$WORK/Ivrix.zip" "$WORK/unz"
 APP="$WORK/unz/Ivrix.app"
 test -d "$APP" || { echo "ERROR: Ivrix.app not found after unzip" >&2; exit 1; }
