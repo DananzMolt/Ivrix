@@ -1066,6 +1066,14 @@ class GhosttyApp {
             self?.reloadConfiguration(source: "settings.terminal.copyOnSelect")
         })
 
+        appObservers.append(NotificationCenter.default.addObserver(
+            forName: TerminalTextDirectionSettings.didChangeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.reloadConfiguration(source: "settings.terminal.textDirection")
+        })
+
         #endif
     }
 
@@ -1211,13 +1219,15 @@ class GhosttyApp {
         #endif
         loadCJKFontFallbackIfNeeded(config)
         // Ivrix Hebrew/BIDI defaults: bidi rendering on, bundled Latin +
-        // Hebrew monospace fonts, slight thickening for Hebrew readability.
+        // Hebrew monospace fonts, slight thickening for Hebrew readability, and
+        // the current print direction (ltr/rtl, toggled from the toolbar).
         loadInlineGhosttyConfig(
             """
             bidi = true
             font-family = Maple Mono NF
             font-family = Miriam Mono CLM
             font-thicken = true
+            \(TerminalTextDirectionSettings.ghosttyConfigContents())
             """,
             into: config,
             prefix: "cmux-hebrew-bidi",

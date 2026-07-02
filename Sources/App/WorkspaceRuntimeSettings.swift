@@ -199,6 +199,48 @@ enum TerminalCopyOnSelectSettings {
     }
 }
 
+/// Terminal print direction (Ivrix Hebrew/BIDI). Maps to Ghostty's
+/// `bidi-direction` config: `ltr` = left-anchored, `rtl` = right-anchored
+/// mirror. Toggled from the window toolbar; persisted app-wide and applied to
+/// live surfaces via a config reload (same pattern as copy-on-select).
+enum TerminalTextDirectionSettings {
+    static let directionKey = "terminal.textDirection"
+    static let didChangeNotification = Notification.Name("cmux.terminalTextDirectionSettingsDidChange")
+
+    enum Direction: String {
+        case ltr
+        case rtl
+    }
+
+    static let defaultDirection: Direction = .ltr
+
+    static func direction(defaults: UserDefaults = .standard) -> Direction {
+        Direction(rawValue: defaults.string(forKey: directionKey) ?? "") ?? defaultDirection
+    }
+
+    /// Ghostty config line for the current direction (always emitted so a reload
+    /// resets a surface that was previously flipped).
+    static func ghosttyConfigContents(defaults: UserDefaults = .standard) -> String {
+        "bidi-direction = \(direction(defaults: defaults).rawValue)"
+    }
+
+    static func setDirection(
+        _ direction: Direction,
+        defaults: UserDefaults = .standard,
+        notificationCenter: NotificationCenter = .default
+    ) {
+        let old = self.direction(defaults: defaults)
+        defaults.set(direction.rawValue, forKey: directionKey)
+        if old != direction {
+            notifyDidChange(notificationCenter: notificationCenter)
+        }
+    }
+
+    static func notifyDidChange(notificationCenter: NotificationCenter = .default) {
+        notificationCenter.post(name: didChangeNotification, object: nil)
+    }
+}
+
 enum TerminalManagedGhosttySettings {
     static func ghosttyConfigContents(defaults: UserDefaults = .standard, emitsCopyOnSelectFalse: Bool = true) -> String? {
         let lines = [
