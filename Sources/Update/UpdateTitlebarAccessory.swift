@@ -495,7 +495,9 @@ enum TitlebarControlsLayoutMetrics {
     }
 
     static func buttonRowWidth(config: TitlebarControlsStyleConfig) -> CGFloat {
-        let buttonCount = CGFloat(TitlebarShortcutHintActionSlot.allCases.count)
+        // +1 reserves room for the Ivrix RTL/LTR direction toggle, which sits in
+        // the row but has no keyboard-shortcut hint slot.
+        let buttonCount = CGFloat(TitlebarShortcutHintActionSlot.allCases.count) + 1
         let gapCount = max(0, buttonCount - 1)
         return (buttonCount * config.buttonSize) + (gapCount * config.spacing)
     }
