@@ -522,7 +522,9 @@ enum TitlebarControlsLayoutMetrics {
     static func buttonRowWidth(config: TitlebarControlsStyleConfig) -> CGFloat {
         let ranges = TitlebarControlsHitRegions.buttonXRanges(config: config)
         guard let first = ranges.first, let last = ranges.last else { return 0 }
-        return last.upperBound - first.lowerBound
+        // The extra button + gap reserves room for the Ivrix RTL/LTR direction
+        // toggle, which sits in the row but has no hit-region or hint slot.
+        return (last.upperBound - first.lowerBound) + config.buttonSize + config.spacing
     }
 
     static func buttonCenterX(
