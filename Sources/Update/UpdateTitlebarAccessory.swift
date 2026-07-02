@@ -886,6 +886,7 @@ struct TitlebarControlsView: View {
     @State private var isHoveringControls = false
     @State private var hostWindowNumber: Int?
     @State private var focusHistoryAvailabilityRevision: UInt64 = 0
+    @State private var textDirection: TerminalTextDirectionSettings.Direction = TerminalTextDirectionSettings.direction()
     @State private var modifierKeyMonitor = WindowScopedShortcutHintModifierMonitor(activation: .commandOnly)
     private let titlebarShortcutHintXOffset = ShortcutHintDebugSettings.defaultTitlebarHintX
     private let titlebarShortcutHintYOffset = ShortcutHintDebugSettings.defaultTitlebarHintY
@@ -980,6 +981,9 @@ struct TitlebarControlsView: View {
             }
             .onReceive(NotificationCenter.default.publisher(for: .ghosttyDefaultBackgroundDidChange)) { _ in
                 appearanceRefreshTick &+= 1
+            }
+            .onReceive(NotificationCenter.default.publisher(for: TerminalTextDirectionSettings.didChangeNotification)) { _ in
+                textDirection = TerminalTextDirectionSettings.direction()
             }
             .onAppear {
                 startShortcutHintMonitorIfNeeded()
@@ -1099,6 +1103,28 @@ struct TitlebarControlsView: View {
                 iconLabel(systemName: "arrow.right", config: config, iconGeometryKeyPrefix: "titlebarControl_focusHistoryForwardIcon")
             }
             .safeHelp(KeyboardShortcutSettings.Action.focusHistoryForward.tooltip(String(localized: "menu.history.focusForward", defaultValue: "Focus Forward")))
+
+            TitlebarControlButton(
+                config: config,
+                foregroundColor: foregroundColor,
+                accessibilityIdentifier: "titlebarControl.textDirection",
+                accessibilityLabel: String(localized: "toolbar.textDirection.tooltip", defaultValue: "Text Direction (RTL/LTR)"),
+                action: {
+                #if DEBUG
+                cmuxDebugLog("titlebar.textDirection")
+                #endif
+                let next: TerminalTextDirectionSettings.Direction = textDirection == .rtl ? .ltr : .rtl
+                TerminalTextDirectionSettings.setDirection(next)
+            }) {
+                iconLabel(
+                    systemName: textDirection == .rtl ? "text.alignright" : "text.alignleft",
+                    config: config,
+                    iconGeometryKeyPrefix: "titlebarControl_textDirectionIcon"
+                )
+            }
+            .safeHelp(textDirection == .rtl
+                ? String(localized: "toolbar.textDirection.rtl", defaultValue: "Right-to-left")
+                : String(localized: "toolbar.textDirection.ltr", defaultValue: "Left-to-right"))
 
         }
 
