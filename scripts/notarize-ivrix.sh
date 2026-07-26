@@ -3,7 +3,7 @@
 # credential profile. Run this on the Mac Studio.
 #
 # What it does:
-#   1. Downloads the ad-hoc Ivrix.zip from the DananzMolt/cmux release.
+#   1. Downloads the ad-hoc Ivrix.zip from the DananzMolt/Ivrix release.
 #   2. Re-signs the app with your Developer ID Application cert + hardened
 #      runtime + the bundled entitlements (notarization requires this; ad-hoc
 #      can't be notarized).
@@ -22,11 +22,13 @@ set -euo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ENTITLEMENTS="$REPO/scripts/ivrix.entitlements"
+HELPER_ENTITLEMENTS="$REPO/cmux-helper.entitlements"
 WORK="${TMPDIR:-/tmp}/ivrix-notarize"
-RELEASE_REPO="DananzMolt/cmux"
+RELEASE_REPO="DananzMolt/Ivrix"
 RELEASE_TAG="ivrix-latest"
 
 test -f "$ENTITLEMENTS" || { echo "ERROR: $ENTITLEMENTS missing (pull the fork)" >&2; exit 1; }
+test -f "$HELPER_ENTITLEMENTS" || { echo "ERROR: $HELPER_ENTITLEMENTS missing (pull the fork)" >&2; exit 1; }
 
 # --- identity ---
 SIGN_IDENTITY="${SIGN_IDENTITY:-}"
@@ -61,11 +63,41 @@ ditto -x -k "$WORK/Ivrix.zip" "$WORK/unz"
 APP="$WORK/unz/Ivrix.app"
 test -d "$APP" || { echo "ERROR: Ivrix.app not found after unzip" >&2; exit 1; }
 
-# --- re-sign Developer ID + hardened runtime ---
-echo "==> re-signing (Developer ID + hardened runtime)"
-codesign --force --deep --timestamp --options runtime \
-  --entitlements "$ENTITLEMENTS" \
-  --sign "$SIGN_IDENTITY" "$APP"
+# --- re-sign Developer ID + hardened runtime (inside-out) ---
+# A single `codesign --deep` does NOT sign nested executables under
+# Contents/Resources/bin, so notarization rejects them as unsigned. Sign
+# inside-out per Apple's docs: helpers, then plugins, then frameworks,
+# then the main bundle WITHOUT --deep.
+echo "==> re-signing (Developer ID + hardened runtime, inside-out)"
+COMMON=(--force --options runtime --timestamp --sign "$SIGN_IDENTITY")
+
+# 1. CLI helpers (Resources/bin/*) with minimal helper entitlements.
+for helper in "$APP/Contents/Resources/bin"/*; do
+  [[ -f "$helper" ]] || continue
+  echo "    helper: $(basename "$helper")"
+  codesign "${COMMON[@]}" --entitlements "$HELPER_ENTITLEMENTS" "$helper"
+done
+
+# 2. Plugins.
+if [[ -d "$APP/Contents/PlugIns" ]]; then
+  while IFS= read -r -d '' plugin; do
+    echo "    plugin: $(basename "$plugin")"
+    codesign "${COMMON[@]}" --deep "$plugin"
+  done < <(find "$APP/Contents/PlugIns" -mindepth 1 -maxdepth 1 -print0)
+fi
+
+# 3. Frameworks (covers Sparkle's XPCServices + Updater.app, Sentry).
+if [[ -d "$APP/Contents/Frameworks" ]]; then
+  while IFS= read -r -d '' framework; do
+    echo "    framework: $(basename "$framework")"
+    codesign "${COMMON[@]}" --deep "$framework"
+  done < <(find "$APP/Contents/Frameworks" -mindepth 1 -maxdepth 1 -print0)
+fi
+
+# 4. Main app bundle (no --deep so helper/plugin sigs are preserved).
+echo "    main bundle: Ivrix.app"
+codesign "${COMMON[@]}" --entitlements "$ENTITLEMENTS" "$APP"
+
 codesign --verify --deep --strict --verbose=2 "$APP" 2>&1 | tail -2
 
 # --- submit + wait ---
