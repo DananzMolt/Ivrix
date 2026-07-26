@@ -1232,14 +1232,20 @@ class GhosttyApp {
         loadRealUserGhosttyConfig(config, preferredColorScheme: preferredColorScheme, themeColorScheme: themeColorScheme)
         #endif
         loadCJKFontFallbackIfNeeded(config)
-        // Ivrix Hebrew/BIDI defaults: bidi rendering on, bundled Latin +
-        // Hebrew monospace fonts, slight thickening for Hebrew readability, and
-        // the current print direction (ltr/rtl, toggled from the toolbar).
+        // Ivrix Hebrew/BIDI defaults: bidi rendering on, bundled Latin mono +
+        // Hebrew fallback, slight thickening for readability, and the current
+        // print direction (ltr/rtl, toggled from the toolbar).
+        //
+        // The Hebrew fallback is Rubik, not a monospace face. Miriam Mono CLM
+        // drew Hebrew at 0.482em — below Maple Mono's 0.550em Latin x-height —
+        // so Hebrew read smaller than surrounding lowercase Latin. Rubik draws
+        // it at 0.572em (1.04x that x-height) with a 0.606em advance against
+        // the 0.600em cell, so it fills the grid without crowding it.
         loadInlineGhosttyConfig(
             """
             bidi = true
             font-family = Maple Mono NF
-            font-family = Miriam Mono CLM
+            font-family = Rubik
             font-thicken = true
             \(TerminalTextDirectionSettings.ghosttyConfigContents())
             """,
