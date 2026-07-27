@@ -2,6 +2,45 @@
 
 All notable changes to cmux are documented here.
 
+## Ivrix [1.0.0] - 2026-07-28
+
+Ivrix is a Hebrew-first fork of cmux. This release rebases the fork onto the
+latest upstream cmux (1919 commits) and makes right-to-left text genuinely
+usable in a terminal.
+
+### Added
+- **Right-to-left rendering.** Hebrew rows are mirrored and right-anchored, per
+  UAX #9. The direction is resolved per row, so Latin rows are untouched.
+- **RTL/LTR toggle** in the window titlebar, applied to live terminals without a
+  restart.
+- **Bidi-aware cursor.** The cursor is placed by visual position, so it sits
+  beside the Hebrew it follows instead of at its logical column.
+- **Mirrored glyphs (UAX #9 rule L4).** A mirrorable character on a
+  right-to-left row renders as its counterpart, so a prompt chevron points into
+  the text and brackets face the right way. All 428 pairs come from the Unicode
+  Character Database.
+- **Direction-aware arrow keys.** On a mirrored row the horizontal arrows follow
+  the text, including word-wise (alt) and line-wise (cmd) movement, which are
+  keybindings rather than encoded keys. Pane-focus shortcuts are deliberately
+  left alone, since panes follow the physical screen. Latin rows behave exactly
+  as before.
+- **Twelve Hebrew faces**, selectable from Settings > Terminal and applied
+  without a restart: Noto Sans Hebrew, Miriam Libre, Alef, Heebo, Assistant, IBM
+  Plex Sans Hebrew, Rubik, Varela Round, Frank Ruhl Libre, David Libre, Secular
+  One and Cousine.
+- **Cmd+Z** undoes the last edit on the line being typed.
+
+### Notes
+- A terminal gives every Hebrew letter one cell, and every Hebrew face measured
+  varies 18-25% in advance width across the alphabet, which reads as broken
+  spacing. Each bundled face is therefore normalised to a uniform 0.600em
+  advance by `scripts/make-hebrew-font.py`, so choosing one changes letterforms
+  only and never the grid. Combining marks keep their zero advance.
+- Cmd+Z sends readline's undo, so it undoes an edit on the current line. It
+  cannot un-run a submitted command and does not affect terminal output.
+- Cmd+Z is a ghostty keybind and is not yet remappable from Settings.
+
+
 ## [0.64.20] - 2026-07-19
 
 ### Added
