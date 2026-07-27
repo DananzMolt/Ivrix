@@ -651,6 +651,9 @@ class GhosttyApp {
         startUptime: ProcessInfo.processInfo.systemUptime
     )
     private var appObservers: [NSObjectProtocol] = []
+    /// Hebrew face this surface last configured, so a defaults change that
+    /// leaves it alone does not trigger a needless font-grid rebuild.
+    private var appliedHebrewFont: TerminalHebrewFontSettings.Face = TerminalHebrewFontSettings.defaultFace
     private var bellAudioSound: NSSound?
     private var backgroundEventCounter: UInt64 = 0
     private var defaultBackgroundUpdateScope: GhosttyDefaultBackgroundUpdateScope = .unscoped
@@ -1093,6 +1096,24 @@ class GhosttyApp {
             queue: .main
         ) { [weak self] _ in
             self?.reloadConfiguration(source: "settings.terminal.hebrewFont")
+        })
+
+        // The settings window writes UserDefaults through its own store rather
+        // than the managed-defaults path that posts the notification above, so
+        // watch the defaults directly too. didChangeNotification fires for any
+        // key, hence the comparison against the face already applied - without
+        // it every unrelated settings write would rebuild the font grid.
+        appliedHebrewFont = TerminalHebrewFontSettings.face()
+        appObservers.append(NotificationCenter.default.addObserver(
+            forName: UserDefaults.didChangeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            guard let self else { return }
+            let face = TerminalHebrewFontSettings.face()
+            guard face != self.appliedHebrewFont else { return }
+            self.appliedHebrewFont = face
+            self.reloadConfiguration(source: "settings.terminal.hebrewFont")
         })
 
         #endif
