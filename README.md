@@ -144,7 +144,11 @@ Sidebar shows git branch, linked PR status/number, working directory, listening 
 - **Keyboard shortcuts** — [Extensive shortcuts](https://cmux.com/docs/keyboard-shortcuts) for workspaces, splits, browser, and more
 - **Open source** — Free and GPL-licensed
 
-## Install
+## Installing upstream cmux
+
+The links in this section install **cmux**, not Ivrix. For Ivrix, use the
+[Ivrix release](https://github.com/DananzMolt/Ivrix/releases/latest) linked at the
+top of this page.
 
 ### DMG (recommended)
 
