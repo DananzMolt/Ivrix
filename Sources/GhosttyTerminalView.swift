@@ -1236,20 +1236,20 @@ class GhosttyApp {
         // Hebrew fallback, slight thickening for readability, and the current
         // print direction (ltr/rtl, toggled from the toolbar).
         //
-        // Ivrix Mono He is the Hebrew fallback: Rubik subset to Hebrew and set
-        // to a uniform 0.600em advance (see Resources/Fonts).
+        // Ivrix Mono He is the Hebrew fallback: Miriam Libre subset to Hebrew,
+        // scaled to a 0.572em letter height and set to a uniform 0.600em
+        // advance (see Resources/Fonts).
         //
-        // The terminal gives every Hebrew letter one cell. A proportional face
-        // therefore gaps badly — Rubik's yod advances 0.213em inside a 0.600em
-        // cell, leaving a third of the cell empty, and its advances vary 24%
-        // across the alphabet, so the spacing reads as broken. Every
-        // proportional Hebrew face measured varies 18-25%, so uniform advances
-        // are the requirement, not a preference.
+        // The terminal gives every Hebrew letter one cell, so a proportional
+        // face gaps badly: advances vary 18-25% across the alphabet in every
+        // Hebrew face measured, and a narrow letter such as yod can advance
+        // 0.213em inside a 0.600em cell, leaving a third of it empty. Uniform
+        // advances are a requirement here, not a preference.
         //
         // Miriam Mono CLM was uniform but drew Hebrew at 0.482em, under Maple
         // Mono's 0.550em Latin x-height, so it read smaller than the
-        // surrounding lowercase. Ivrix Mono He keeps Rubik's 0.572em height
-        // and adds the uniform advance.
+        // surrounding lowercase. Normalising Miriam Libre gives both: an even
+        // rhythm and a letter height that matches the Latin.
         loadInlineGhosttyConfig(
             """
             bidi = true
