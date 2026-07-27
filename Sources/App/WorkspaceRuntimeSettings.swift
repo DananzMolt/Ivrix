@@ -1,3 +1,4 @@
+import CmuxSettings
 import Darwin
 import Foundation
 enum WorkspaceTitlebarSettings {
@@ -235,6 +236,45 @@ enum TerminalTextDirectionSettings {
         let old = self.direction(defaults: defaults)
         defaults.set(direction.rawValue, forKey: directionKey)
         if old != direction {
+            notifyDidChange(notificationCenter: notificationCenter)
+        }
+    }
+
+    static func notifyDidChange(notificationCenter: NotificationCenter = .default) {
+        notificationCenter.post(name: didChangeNotification, object: nil)
+    }
+}
+
+/// Hebrew fallback face (Ivrix). The face list lives in CmuxSettings so the
+/// settings window and the terminal agree on one definition; this wrapper adds
+/// the ghostty config line and the change notification that makes live
+/// surfaces reload.
+enum TerminalHebrewFontSettings {
+    typealias Face = HebrewFontFace
+
+    static let fontKey = HebrewFontFace.settingsPath
+    static let didChangeNotification = Notification.Name("cmux.terminalHebrewFontSettingsDidChange")
+
+    static let defaultFace: Face = .defaultFace
+
+    static func face(defaults: UserDefaults = .standard) -> Face {
+        Face(rawValue: defaults.string(forKey: fontKey) ?? "") ?? defaultFace
+    }
+
+    /// Ghostty config line naming the Hebrew fallback. Always emitted so a
+    /// reload switches a surface that was previously on another face.
+    static func ghosttyConfigContents(defaults: UserDefaults = .standard) -> String {
+        "font-family = \(face(defaults: defaults).familyName)"
+    }
+
+    static func setFace(
+        _ face: Face,
+        defaults: UserDefaults = .standard,
+        notificationCenter: NotificationCenter = .default
+    ) {
+        let old = self.face(defaults: defaults)
+        defaults.set(face.rawValue, forKey: fontKey)
+        if old != face {
             notifyDidChange(notificationCenter: notificationCenter)
         }
     }

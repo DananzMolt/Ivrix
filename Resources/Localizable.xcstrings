@@ -186639,6 +186639,38 @@
         }
       }
     },
+    "settings.terminal.hebrewFont": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hebrew Font"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ヘブライ語フォント"
+          }
+        }
+      }
+    },
+    "settings.terminal.hebrewFont.subtitle": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Face used for Hebrew text. Every option is normalised to the Latin cell width, so this changes letterforms only."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ヘブライ語テキストに使用する書体。すべての選択肢はラテン文字のセル幅に合わせて正規化されているため、字形のみが変わります。"
+          }
+        }
+      }
+    },
     "settings.terminal.memoryGuardrail": {
       "extractionState": "manual",
       "localizations": {

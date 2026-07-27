@@ -1087,6 +1087,14 @@ class GhosttyApp {
             self?.reloadConfiguration(source: "settings.terminal.textDirection")
         })
 
+        appObservers.append(NotificationCenter.default.addObserver(
+            forName: TerminalHebrewFontSettings.didChangeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.reloadConfiguration(source: "settings.terminal.hebrewFont")
+        })
+
         #endif
     }
 
@@ -1236,9 +1244,16 @@ class GhosttyApp {
         // Hebrew fallback, slight thickening for readability, and the current
         // print direction (ltr/rtl, toggled from the toolbar).
         //
-        // Ivrix Mono He is the Hebrew fallback: Miriam Libre subset to Hebrew,
-        // scaled to a 0.572em letter height and set to a uniform 0.600em
-        // advance (see Resources/Fonts).
+        // Ivrix Mono He is the Hebrew fallback: Secular One subset to Hebrew
+        // and set to a uniform 0.600em advance. Built by
+        // scripts/make-hebrew-font.py, which scales each weight by whichever
+        // limit binds first - the target letter height, or the maximum ink
+        // width that keeps the widest letter inside the cell.
+        //
+        // Secular One is a single-weight display face, so only Regular ships
+        // and ghostty synthesises bold and italic from it. Shipping a "Bold"
+        // with the same outlines would suppress that synthesis and leave no
+        // visual bold at all.
         //
         // The terminal gives every Hebrew letter one cell, so a proportional
         // face gaps badly: advances vary 18-25% across the alphabet in every
@@ -1248,13 +1263,13 @@ class GhosttyApp {
         //
         // Miriam Mono CLM was uniform but drew Hebrew at 0.482em, under Maple
         // Mono's 0.550em Latin x-height, so it read smaller than the
-        // surrounding lowercase. Normalising Miriam Libre gives both: an even
-        // rhythm and a letter height that matches the Latin.
+        // surrounding lowercase. Normalising a proportional face gives both:
+        // an even rhythm and a letter height that matches the Latin.
         loadInlineGhosttyConfig(
             """
             bidi = true
             font-family = Maple Mono NF
-            font-family = Ivrix Mono He
+            \(TerminalHebrewFontSettings.ghosttyConfigContents())
             font-thicken = true
             \(TerminalTextDirectionSettings.ghosttyConfigContents())
             """,
