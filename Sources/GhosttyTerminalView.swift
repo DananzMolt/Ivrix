@@ -1236,16 +1236,25 @@ class GhosttyApp {
         // Hebrew fallback, slight thickening for readability, and the current
         // print direction (ltr/rtl, toggled from the toolbar).
         //
-        // The Hebrew fallback is Rubik, not a monospace face. Miriam Mono CLM
-        // drew Hebrew at 0.482em — below Maple Mono's 0.550em Latin x-height —
-        // so Hebrew read smaller than surrounding lowercase Latin. Rubik draws
-        // it at 0.572em (1.04x that x-height) with a 0.606em advance against
-        // the 0.600em cell, so it fills the grid without crowding it.
+        // Ivrix Mono He is the Hebrew fallback: Rubik subset to Hebrew and set
+        // to a uniform 0.600em advance (see Resources/Fonts).
+        //
+        // The terminal gives every Hebrew letter one cell. A proportional face
+        // therefore gaps badly — Rubik's yod advances 0.213em inside a 0.600em
+        // cell, leaving a third of the cell empty, and its advances vary 24%
+        // across the alphabet, so the spacing reads as broken. Every
+        // proportional Hebrew face measured varies 18-25%, so uniform advances
+        // are the requirement, not a preference.
+        //
+        // Miriam Mono CLM was uniform but drew Hebrew at 0.482em, under Maple
+        // Mono's 0.550em Latin x-height, so it read smaller than the
+        // surrounding lowercase. Ivrix Mono He keeps Rubik's 0.572em height
+        // and adds the uniform advance.
         loadInlineGhosttyConfig(
             """
             bidi = true
             font-family = Maple Mono NF
-            font-family = Rubik
+            font-family = Ivrix Mono He
             font-thicken = true
             \(TerminalTextDirectionSettings.ghosttyConfigContents())
             """,
