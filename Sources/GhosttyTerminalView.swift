@@ -1393,6 +1393,22 @@ class GhosttyApp {
             prefix: "cmux-owned-keybind-overrides",
             logLabel: "cmux-owned keybind overrides"
         )
+
+        // Cmd+Z undoes the last edit on the line being typed, by sending
+        // readline's undo (Ctrl+_, 0x1f). Shells and readline-style TUIs act
+        // on it; anything that ignores 0x1f does nothing, which is the same as
+        // the unbound behaviour it replaces.
+        //
+        // This undoes an *edit*, not a command: nothing can un-run something
+        // already submitted, and it does not touch terminal output.
+        loadInlineGhosttyConfig(
+            """
+            keybind = super+z=text:\\x1f
+            """,
+            into: config,
+            prefix: "cmux-undo-keybind",
+            logLabel: "cmux undo keybind"
+        )
     }
 
     /// Unbinds Ghostty's built-in `super+1…8 = goto_tab` / `super+9 = last_tab`
