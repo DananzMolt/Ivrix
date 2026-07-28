@@ -10,6 +10,11 @@ source "$SCRIPT_DIR/lib/dev-secrets.sh"
 APP_NAME="cmux DEV"
 BUNDLE_ID="com.cmuxterm.app.debug"
 BASE_APP_NAME="cmux DEV"
+# What the app calls itself in the Dock, menu bar and app switcher. Kept
+# separate from APP_NAME, which names the .app directory: that has to keep
+# matching what xcodebuild emits and what the rest of the dev tooling greps
+# for, while this is purely the user-visible label.
+DISPLAY_NAME="ivrix-dev"
 DERIVED_DATA=""
 NAME_SET=0
 BUNDLE_SET=0
@@ -488,6 +493,10 @@ while [[ $# -gt 0 ]]; do
         echo "error: --name requires a value" >&2
         exit 1
       fi
+      # An explicit --name is naming the app, so it wins for the visible
+      # label too rather than leaving a build called one thing on disk and
+      # another in the Dock.
+      DISPLAY_NAME="$APP_NAME"
       NAME_SET=1
       shift 2
       ;;
@@ -568,6 +577,7 @@ if [[ -n "$TAG" ]]; then
   TAG_SLUG="$(sanitize_path "$TAG")"
   if [[ "$NAME_SET" -eq 0 ]]; then
     APP_NAME="cmux DEV ${TAG_SLUG}"
+    DISPLAY_NAME="ivrix-dev ${TAG_SLUG}"
   fi
   if [[ "$BUNDLE_SET" -eq 0 ]]; then
     BUNDLE_ID="com.cmuxterm.app.debug.${TAG_ID}"
@@ -717,8 +727,8 @@ if [[ "${CMUX_DISABLE_AUTOMATIC_PACKAGE_RESOLUTION:-}" == "1" ]]; then
 fi
 if [[ -z "$TAG" ]]; then
   XCODEBUILD_ARGS+=(
-    INFOPLIST_KEY_CFBundleName="$APP_NAME"
-    INFOPLIST_KEY_CFBundleDisplayName="$APP_NAME"
+    INFOPLIST_KEY_CFBundleName="$DISPLAY_NAME"
+    INFOPLIST_KEY_CFBundleDisplayName="$DISPLAY_NAME"
   )
 fi
 XCODEBUILD_ARGS+=(PRODUCT_BUNDLE_IDENTIFIER="$BUNDLE_ID")
@@ -971,10 +981,10 @@ if [[ -n "$TAG" && "$APP_NAME" != "$SEARCH_APP_NAME" ]]; then
   cp -R "$APP_PATH" "$TAG_APP_STAGING_PATH"
   INFO_PLIST="$TAG_APP_STAGING_PATH/Contents/Info.plist"
   if [[ -f "$INFO_PLIST" ]]; then
-    /usr/libexec/PlistBuddy -c "Set :CFBundleName $APP_NAME" "$INFO_PLIST" 2>/dev/null \
-      || /usr/libexec/PlistBuddy -c "Add :CFBundleName string $APP_NAME" "$INFO_PLIST"
-    /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName $APP_NAME" "$INFO_PLIST" 2>/dev/null \
-      || /usr/libexec/PlistBuddy -c "Add :CFBundleDisplayName string $APP_NAME" "$INFO_PLIST"
+    /usr/libexec/PlistBuddy -c "Set :CFBundleName $DISPLAY_NAME" "$INFO_PLIST" 2>/dev/null \
+      || /usr/libexec/PlistBuddy -c "Add :CFBundleName string $DISPLAY_NAME" "$INFO_PLIST"
+    /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName $DISPLAY_NAME" "$INFO_PLIST" 2>/dev/null \
+      || /usr/libexec/PlistBuddy -c "Add :CFBundleDisplayName string $DISPLAY_NAME" "$INFO_PLIST"
     /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier $BUNDLE_ID" "$INFO_PLIST" 2>/dev/null \
       || /usr/libexec/PlistBuddy -c "Add :CFBundleIdentifier string $BUNDLE_ID" "$INFO_PLIST"
     if [[ -n "${TAG_SLUG:-}" ]]; then
