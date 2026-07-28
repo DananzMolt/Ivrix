@@ -1,28 +1,79 @@
-<h1 align="center">cmux</h1>
-<p align="center">A Ghostty-based macOS terminal with vertical tabs and notifications for AI coding agents</p>
+<h1 align="center">Ivrix</h1>
+<p align="center"><strong>A macOS terminal that actually gets Hebrew right.</strong></p>
+<p align="center">Real right-to-left (RTL) and bidirectional (BiDi) text support, built on <a href="https://ghostty.org">Ghostty</a>.<br/>
+A fork of <a href="https://github.com/manaflow-ai/cmux">cmux</a>.</p>
+
+<p align="center" dir="rtl"><strong>מסוף (טרמינל) ל־macOS עם תמיכה אמיתית בעברית ובכתיבה מימין לשמאל</strong></p>
 
 <p align="center">
-  <a href="https://github.com/manaflow-ai/cmux/releases/latest/download/cmux-macos.dmg">
-    <img src="./docs/assets/macos-badge.png" alt="Download cmux for macOS" width="180" />
+  <a href="https://github.com/DananzMolt/Ivrix/releases/latest">
+    <img src="./docs/assets/macos-badge.png" alt="Download Ivrix for macOS" width="180" />
   </a>
 </p>
+
+<p align="center">
+  <a href="https://github.com/DananzMolt/Ivrix/releases/latest"><img src="https://img.shields.io/github/v/release/DananzMolt/Ivrix?label=release&color=4c71f2" alt="Latest release" /></a>
+  <img src="https://img.shields.io/badge/macOS-universal-555?logo=apple" alt="macOS universal" />
+  <img src="https://img.shields.io/badge/notarized-Apple-555?logo=apple" alt="Notarized by Apple" />
+</p>
+
+## Why Ivrix
+
+Terminal emulators are built left-to-right. Hebrew and Arabic mostly "work" in the
+sense that the characters appear, but the moment you actually edit a line the
+illusion breaks: the cursor lands somewhere else, arrow keys move the wrong way,
+and the prompt arrow points away from your text.
+
+Ivrix fixes that layer properly, following the Unicode bidirectional algorithm
+([UAX #9](https://unicode.org/reports/tr9/)):
+
+- **Right-to-left rendering.** Hebrew lines are mirrored and right-anchored. The
+  direction is resolved **per line**, so English lines are untouched and mixed
+  Hebrew/English content behaves correctly in both.
+- **RTL/LTR toggle** in the titlebar, applied to open terminals without a restart.
+- **A cursor that follows the text.** Placed by visual position, so it sits beside
+  the Hebrew it belongs to instead of stranded at the left edge.
+- **Mirrored glyphs (UAX #9 rule L4).** On a Hebrew line the prompt chevron points
+  into the text and brackets face the right way. All 428 mirror pairs come from the
+  Unicode Character Database.
+- **Direction-aware arrow keys.** On a Hebrew line the arrows follow the text,
+  including word-wise (⌥) and line-wise (⌘) movement. On English lines they behave
+  exactly as always.
+- **Twelve Hebrew fonts** built in, switchable live from *Settings → Terminal →
+  Hebrew Font*.
+
+### Hebrew fonts that fit the grid
+
+A terminal gives every Hebrew letter exactly one cell, and every Hebrew typeface we
+measured varies **18–25%** in advance width across the alphabet. Dropping one in
+as-is leaves ragged gaps between letters. Every bundled face is normalised to a
+uniform cell width, so switching changes letterforms only and never the grid.
+Nikud keep zero width and stack on the letter instead of taking a cell of their own.
+
+Included: Noto Sans Hebrew (default), Miriam Libre, Alef, Heebo, Assistant, IBM Plex
+Sans Hebrew, Rubik, Varela Round, Frank Ruhl Libre, David Libre, Secular One and
+Cousine.
+
+## Install
+
+[**Download the latest release**](https://github.com/DananzMolt/Ivrix/releases/latest),
+open the DMG and drag Ivrix to Applications.
+
+Signed and notarized by Apple, so it opens without a Gatekeeper warning. Universal
+binary — Apple Silicon and Intel.
+
+## Everything else, from cmux
+
+Ivrix is a fork of [cmux](https://github.com/manaflow-ai/cmux) and inherits all of
+it: vertical tabs, notification rings for AI coding agents, splits, workspaces, the
+browser pane and the CLI. The upstream feature tour follows below.
 
 <p align="center">
   English | <a href="README.ja.md">日本語</a> | <a href="README.vi.md">Tiếng Việt</a> | <a href="README.zh-CN.md">简体中文</a> | <a href="README.zh-TW.md">繁體中文</a> | <a href="README.ko.md">한국어</a> | <a href="README.de.md">Deutsch</a> | <a href="README.es.md">Español</a> | <a href="README.fr.md">Français</a> | <a href="README.it.md">Italiano</a> | <a href="README.da.md">Dansk</a> | <a href="README.pl.md">Polski</a> | <a href="README.ru.md">Русский</a> | <a href="README.bs.md">Bosanski</a> | <a href="README.ar.md">العربية</a> | <a href="README.no.md">Norsk</a> | <a href="README.pt-BR.md">Português (Brasil)</a> | <a href="README.th.md">ไทย</a> | <a href="README.tr.md">Türkçe</a> | <a href="README.km.md">ភាសាខ្មែរ</a> | <a href="README.uk.md">Українська</a>
 </p>
 
 <p align="center">
-  <a href="https://x.com/manaflowai"><img src="https://img.shields.io/badge/@manaflow-555?logo=x" alt="X / Twitter" /></a>
-  <a href="https://discord.gg/xsgFEVrWCZ"><img src="https://img.shields.io/badge/Discord-555?logo=discord" alt="Discord" /></a>
-  <a href="https://github.com/manaflow-ai/cmux"><img src="https://img.shields.io/github/stars/manaflow-ai/cmux?style=flat&logo=github&label=stars&color=4c71f2" alt="GitHub stars" /></a>
-</p>
-
-<p align="center">
-  <img src="./docs/assets/main-first-image.png" alt="cmux screenshot" width="900" />
-</p>
-
-<p align="center">
-  <a href="https://www.youtube.com/watch?v=i-WxO5YUTOs">▶ Demo video</a> · <a href="https://cmux.com/blog/zen-of-cmux">The Zen of cmux</a>
+  <img src="./docs/assets/main-first-image.png" alt="Ivrix screenshot" width="900" />
 </p>
 
 ## Features
@@ -93,7 +144,11 @@ Sidebar shows git branch, linked PR status/number, working directory, listening 
 - **Keyboard shortcuts** — [Extensive shortcuts](https://cmux.com/docs/keyboard-shortcuts) for workspaces, splits, browser, and more
 - **Open source** — Free and GPL-licensed
 
-## Install
+## Installing upstream cmux
+
+The links in this section install **cmux**, not Ivrix. For Ivrix, use the
+[Ivrix release](https://github.com/DananzMolt/Ivrix/releases/latest) linked at the
+top of this page.
 
 ### DMG (recommended)
 
@@ -445,3 +500,19 @@ for portions for which Manaflow controls the necessary rights. They do not
 relicense third-party material or outside contributions for which Manaflow
 lacks a separate grant. See [LICENSE](LICENSE) for the exact scope and contact
 [founders@manaflow.com](mailto:founders@manaflow.com) for details.
+
+---
+
+## About
+
+**Ivrix** is a Hebrew terminal for macOS: a right-to-left (RTL) terminal emulator with
+full bidirectional text (BiDi) support, Hebrew fonts, and a bidi-aware cursor and
+keyboard navigation. It is a fork of [cmux](https://github.com/manaflow-ai/cmux),
+which is built on [Ghostty](https://ghostty.org).
+
+If you searched for a Hebrew terminal, an RTL terminal for Mac, Hebrew support in
+iTerm/Terminal.app/Ghostty, or  תמיכה בעברית בטרמינל  — this is what Ivrix is for.
+
+Upstream cmux is by [manaflow-ai](https://github.com/manaflow-ai/cmux); Ghostty is by
+[Mitchell Hashimoto](https://ghostty.org). Bundled Hebrew fonts ship under the SIL
+Open Font License with their original attribution.

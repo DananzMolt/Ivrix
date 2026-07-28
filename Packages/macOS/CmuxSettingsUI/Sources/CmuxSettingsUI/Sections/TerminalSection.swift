@@ -23,6 +23,7 @@ public struct TerminalSection: View {
     @State private var sessionContentAlignment: DefaultsValueModel<SessionContentAlignment>
     @State private var scrollBar: DefaultsValueModel<Bool>
     @State private var copyOnSelect: DefaultsValueModel<Bool>
+    @State private var hebrewFont: DefaultsValueModel<HebrewFontFace>
     @State private var autoResume: DefaultsValueModel<Bool>
     @State private var hibernation: DefaultsValueModel<Bool>
     @State private var idleSeconds: DefaultsValueModel<Double>
@@ -49,6 +50,7 @@ public struct TerminalSection: View {
         _sessionContentAlignment = State(initialValue: DefaultsValueModel(store: defaultsStore, key: catalog.terminal.sessionContentAlignment))
         _scrollBar = State(initialValue: DefaultsValueModel(store: defaultsStore, key: catalog.terminal.showScrollBar))
         _copyOnSelect = State(initialValue: DefaultsValueModel(store: defaultsStore, key: catalog.terminal.copyOnSelect))
+        _hebrewFont = State(initialValue: DefaultsValueModel(store: defaultsStore, key: catalog.terminal.hebrewFont))
         _autoResume = State(initialValue: DefaultsValueModel(store: defaultsStore, key: catalog.terminal.autoResumeAgentSessions))
         _hibernation = State(initialValue: DefaultsValueModel(store: defaultsStore, key: catalog.terminal.agentHibernationEnabled))
         _idleSeconds = State(initialValue: DefaultsValueModel(store: defaultsStore, key: catalog.terminal.agentHibernationIdleSeconds))
@@ -77,6 +79,7 @@ public struct TerminalSection: View {
             sessionContentAlignment,
             scrollBar,
             copyOnSelect,
+            hebrewFont,
             autoResume,
             hibernation,
             idleSeconds,
@@ -308,6 +311,32 @@ public struct TerminalSection: View {
                 .frame(width: 210)
                 .disabled(!sessionContentWidthEnabled)
                 .accessibilityIdentifier("SettingsSessionContentAlignmentPicker")
+            }
+            SettingsCardDivider()
+            SettingsCardRow(
+                configurationReview: .json(HebrewFontFace.settingsPath),
+                String(localized: "settings.terminal.hebrewFont", defaultValue: "Hebrew Font"),
+                subtitle: String(
+                    localized: "settings.terminal.hebrewFont.subtitle",
+                    defaultValue: "Face used for Hebrew text. Every option is normalised to the Latin cell width, so this changes letterforms only."
+                ),
+                controlWidth: 250
+            ) {
+                Picker(
+                    "",
+                    selection: Binding(
+                        get: { hebrewFont.current },
+                        set: { hebrewFont.set($0) }
+                    )
+                ) {
+                    ForEach(HebrewFontFace.allCases, id: \.self) { face in
+                        Text(face.displayName).tag(face)
+                    }
+                }
+                .labelsHidden()
+                .pickerStyle(.menu)
+                .frame(width: 210)
+                .accessibilityIdentifier("SettingsHebrewFontPicker")
             }
             SettingsCardDivider()
             SettingsCardRow(

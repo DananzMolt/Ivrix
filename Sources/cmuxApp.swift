@@ -925,6 +925,7 @@ struct cmuxApp: App {
                 }
             }
             Divider()
+            Divider()
             splitCommandButton(title: String(localized: "menu.view.nextSurface", defaultValue: "Next Surface"), shortcut: menuShortcut(for: .nextSurface)) {
                 activeTabManager.selectNextSurface()
             }

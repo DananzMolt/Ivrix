@@ -55,6 +55,8 @@ PLIST="$APP/Contents/Info.plist"
 echo "==> [3/6] Bundling fonts into Resources/Fonts"
 mkdir -p "$APP/Contents/Resources/Fonts"
 cp -f Resources/Fonts/*.ttf "$APP/Contents/Resources/Fonts/"
+# The OFL requires its text to ship alongside the fonts it covers.
+cp -f Resources/Fonts/*.txt "$APP/Contents/Resources/Fonts/" 2>/dev/null || true
 
 echo "==> [4/6] Ad-hoc signing (minimal entitlements, deep)"
 # Plain ad-hoc (no hardened runtime — not notarizing; avoids launch friction).
