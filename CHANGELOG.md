@@ -2,6 +2,47 @@
 
 All notable changes to cmux are documented here.
 
+## Ivrix [1.1.0] - 2026-07-28
+
+Selection and text editing at the prompt, and the bidi fixes needed to make
+them correct in Hebrew.
+
+### Added
+- **Selection editing at the prompt.** Select text and type to replace it, or
+  press backspace/delete to remove it, the way a text editor behaves. A
+  terminal has no protocol for this, so the terminal places the shell's cursor
+  with arrow keys and deletes the selected positions itself. Needs `OSC 133`
+  input marking; controlled by `selection-edit-at-prompt`.
+- **Keyboard selection.** `Shift+Left/Right` selects by character and
+  `Shift+Option+Left/Right` by word. Direction is resolved per row, so on a
+  Hebrew line `Shift+Left` extends forward through the text, matching the way
+  the plain arrows already move.
+- **Cursor hides during selection**, since the selection is what the next
+  keystroke acts on. Controlled by `cursor-hide-while-selecting`.
+
+### Fixed
+- **Hyphenated words and numbers no longer scatter on a Hebrew line.** A
+  neutral character resolving left-to-right inside a right-to-left paragraph
+  was given embedding level 0 instead of 2, which cut the paragraph run in two
+  and reordered each half on its own: `max-height` rendered as
+  `max <hebrew> -height`. Two Latin words separated by a space broke the same
+  way.
+- **Numbers keep their digit order.** Weak types (UAX #9 W1-W7) were never
+  resolved, so number separators were treated as neutral: `1.5` rendered as
+  `5.1`, `3,000` as `000,3`, and `192.168.1.1` came out fully reversed.
+- **Backgrounds, selection highlight and decorations paint at the visual
+  column.** Only glyphs went through the bidi map, so on a Hebrew row the text
+  sat in one place and everything drawn around it sat in another.
+- **The mouse lands on the cell under the pointer in Hebrew.** Clicks were
+  handing a screen column straight in as a logical cell index, so dragging
+  selected text the user had not dragged over.
+- **Wide characters cost one arrow key, not two,** when clicking to move the
+  cursor past CJK or emoji.
+
+### Changed
+- Dev builds identify themselves as `ivrix-dev` rather than the upstream name.
+- The app now carries its own version rather than inheriting cmux's.
+
 ## Ivrix [1.0.0] - 2026-07-28
 
 Ivrix is a Hebrew-first fork of cmux. This release rebases the fork onto the
