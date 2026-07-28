@@ -5,10 +5,12 @@ import CmuxSettings
 private struct DockPaneCloseConfirmationPrompt: Sendable {
     let title: String
     let message: String
+    let details: String
 
     init(titles: [String]) {
         let count = titles.count
         let titleLines = titles.map { "• \($0)" }.joined(separator: "\n")
+        details = titleLines
         title = String(localized: "dialog.closePane.title", defaultValue: "Close pane?")
 
         if count == 1 {
@@ -44,7 +46,7 @@ extension DockSplitStore {
         }
         guard !pendingCloseConfirmDockTabIds.contains(tab.id) else { return false }
 
-        let confirmationManager = AppDelegate.shared?.tabManagerFor(tabId: workspaceId) ?? AppDelegate.shared?.tabManager
+        let confirmationManager = dockCloseConfirmationManager()
         if confirmationManager?.isCloseConfirmationInFlight == true { return false }
 
         pendingCloseConfirmDockTabIds.insert(tab.id)
@@ -86,7 +88,7 @@ extension DockSplitStore {
 
         guard pendingCloseConfirmDockTabIds.isDisjoint(with: confirmableTabIds) else { return false }
 
-        let confirmationManager = AppDelegate.shared?.tabManagerFor(tabId: workspaceId) ?? AppDelegate.shared?.tabManager
+        let confirmationManager = dockCloseConfirmationManager()
         if confirmationManager?.isCloseConfirmationInFlight == true { return false }
 
         pendingCloseConfirmDockTabIds.formUnion(confirmableTabIds)
@@ -126,6 +128,14 @@ extension DockSplitStore {
         return panel.isDirty
     }
 
+    /// The manager that owns Dock close confirmation state and sheet
+    /// presentation. Window Docks use a window id as `workspaceId`, so they
+    /// must resolve through the Dock owner rather than `tabManagerFor(tabId:)`.
+    private func dockCloseConfirmationManager() -> TabManager? {
+        guard let app = AppDelegate.shared else { return nil }
+        return app.dockReferenceTabManager(for: self)
+    }
+
     func needsConfirmClose() -> Bool {
         for tabId in bonsplitController.allTabIds {
             guard let panel = panel(for: tabId), dockPanelNeedsConfirmClose(panel) else { continue }
@@ -147,20 +157,37 @@ extension DockSplitStore {
     }
 
     private func confirmCloseDockPane(_ prompt: DockPaneCloseConfirmationPrompt, confirmationManager: TabManager?) -> Bool {
-        confirmCloseDockPrompt(title: prompt.title, message: prompt.message, confirmationManager: confirmationManager)
+        confirmCloseDockPrompt(
+            title: prompt.title,
+            message: prompt.message,
+            scrollableDetails: prompt.details,
+            confirmationManager: confirmationManager
+        )
     }
 
-    private func confirmCloseDockPrompt(title: String, message: String, confirmationManager: TabManager?) -> Bool {
+    private func confirmCloseDockPrompt(
+        title: String,
+        message: String,
+        scrollableDetails: String? = nil,
+        confirmationManager: TabManager?
+    ) -> Bool {
         if let confirmationManager {
-            return confirmationManager.confirmClose(title: title, message: message, acceptCmdD: false)
+            return confirmationManager.confirmClose(
+                title: title,
+                message: message,
+                scrollableDetails: scrollableDetails,
+                acceptCmdD: false
+            )
         }
 
         let alert = NSAlert()
         alert.messageText = title
-        alert.informativeText = message
         alert.alertStyle = .warning
         alert.addButton(withTitle: String(localized: "dialog.closeTab.close", defaultValue: "Close"))
         alert.addButton(withTitle: String(localized: "dialog.closeTab.cancel", defaultValue: "Cancel"))
-        return alert.runModal() == .alertFirstButtonReturn
+        let content = scrollableDetails.map {
+            CmuxAlertContent(flattenedText: message, separatingScrollableDetails: $0)
+        } ?? CmuxAlertContent(informativeText: message)
+        return alert.runCmuxModal(content: content) == .alertFirstButtonReturn
     }
 }

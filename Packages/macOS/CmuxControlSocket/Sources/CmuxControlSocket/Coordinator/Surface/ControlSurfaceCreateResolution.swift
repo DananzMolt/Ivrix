@@ -25,6 +25,9 @@ public enum ControlSurfaceCreateResolution: Sendable, Equatable {
     /// Dock placement was requested while the Dock sidebar mode is unavailable
     /// (`invalid_params`, app-bundle-resolved message, `data: {"placement": "dock"}`).
     case dockUnavailable(message: String)
+    /// Dock placement was requested with selectors that name different window
+    /// Docks (`invalid_params`, app-bundle-resolved message).
+    case dockConflictingRoutingSelectors(message: String)
     /// The browser was disabled; carries the shared external-open outcome.
     case browserDisabled(ControlSurfaceBrowserDisabledOutcome)
     /// No workspace resolved (legacy `not_found` / "Workspace not found").
@@ -32,12 +35,15 @@ public enum ControlSurfaceCreateResolution: Sendable, Equatable {
     /// The requested/focused pane did not resolve (legacy `not_found` / "Pane not
     /// found").
     case paneNotFound
+    /// A projected remote tmux pane resolved, but its owner cannot host this
+    /// surface type. Carries the wire type and app-bundle-localized explanation.
+    case mirrorPaneTargetUnsupportedType(typeRawValue: String, message: String)
     /// The surface creation failed (legacy `internal_error` / "Failed to create
     /// surface").
     case createFailed
-    /// The request carried options the routed remote tmux `new-window` cannot
-    /// honor; rejected BEFORE the remote session was mutated (an error after
-    /// the mutation invites retries that duplicate remote tabs).
+    /// The request carried options the routed remote tmux creation cannot honor;
+    /// rejected BEFORE the remote session was mutated (an error after the
+    /// mutation invites retries that duplicate remote panes or windows).
     case mirrorUnsupportedOptions([String])
     /// The create was routed to the remote tmux mirror backing the workspace
     /// (`new-window`); the tab arrives asynchronously via `%window-add`.
