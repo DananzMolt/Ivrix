@@ -2,6 +2,24 @@
 
 All notable changes to cmux are documented here.
 
+## Ivrix [1.1.1] - 2026-07-28
+
+### Fixed
+- **The "Update Available" button now updates Ivrix.** It ran Sparkle against
+  upstream cmux's release feed, so an Ivrix install was offered upstream's
+  releases; accepting one replaced Ivrix with cmux and lost the Hebrew build.
+  The feed now names this repository, and the app carries its own signing key
+  rather than upstream's, so only Ivrix releases can be offered or installed.
+  Releases publish a signed `appcast.xml`, without which the feed returned
+  nothing and no update was ever shown.
+
+  Installs of 1.1.0 and earlier carry the old feed and cannot be reached by
+  this fix. Download 1.1.1 once by hand; updates work from there on.
+
+### Changed
+- `scripts/build-ivrix.sh` refuses to build if the updater feed still points
+  upstream or the signing key is missing or upstream's.
+
 ## Ivrix [1.1.0] - 2026-07-28
 
 Selection and text editing at the prompt, and the bidi fixes needed to make
