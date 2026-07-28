@@ -49,10 +49,12 @@ PUBDATE="$(date -u '+%a, %d %b %Y %H:%M:%S +0000')"
 URL="https://github.com/$REPO_SLUG/releases/download/$TAG/$(basename "$DMG")"
 
 echo "==> signing $DMG"
+# `set -u` treats an empty array expansion as unbound on bash 3.2, which is
+# what ships with macOS, so guard the expansion rather than the assignment.
 SIG_ARGS=()
 [[ -n "${SPARKLE_ACCOUNT:-}" ]] && SIG_ARGS+=(--account "$SPARKLE_ACCOUNT")
 # sign_update prints: sparkle:edSignature="..." length="..."
-SIGN_OUT="$("$SIGN_UPDATE" "${SIG_ARGS[@]}" "$DMG")"
+SIGN_OUT="$("$SIGN_UPDATE" ${SIG_ARGS[@]+"${SIG_ARGS[@]}"} "$DMG")"
 echo "    $SIGN_OUT"
 
 cat > "$OUT" <<XML
