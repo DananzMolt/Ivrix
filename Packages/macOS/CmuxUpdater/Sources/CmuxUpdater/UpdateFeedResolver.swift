@@ -34,11 +34,21 @@ public struct UpdateFeedResolver: Sendable {
     /// The appcast URL used when the `Info.plist` feed URL is missing or empty.
     public let fallbackFeedURL: String
 
+    /// The appcast this fork updates from.
+    ///
+    /// This has to be Ivrix's own feed, not the upstream project's. An Ivrix
+    /// build that queries upstream is offered upstream's releases, and because
+    /// the two are different applications, installing one replaces Ivrix with
+    /// cmux and loses the Hebrew build entirely. A wrong value here is worse
+    /// than no updater at all, so it must never silently fall back upstream.
+    public static let ivrixFallbackFeedURL =
+        "https://github.com/DananzMolt/Ivrix/releases/latest/download/appcast.xml"
+
     /// Creates a resolver.
     ///
     /// - Parameter fallbackFeedURL: The appcast URL to fall back to when the build-time
     ///   feed URL is absent. Defaults to the project's latest-release appcast.
-    public init(fallbackFeedURL: String = "https://github.com/manaflow-ai/cmux/releases/latest/download/appcast.xml") {
+    public init(fallbackFeedURL: String = UpdateFeedResolver.ivrixFallbackFeedURL) {
         self.fallbackFeedURL = fallbackFeedURL
     }
 
