@@ -2,6 +2,29 @@
 
 All notable changes to cmux are documented here.
 
+## Ivrix [1.1.2] - 2026-07-29
+
+Right-to-left fixes for selecting and moving around inside full-screen
+applications.
+
+### Fixed
+- **Selecting Hebrew inside a TUI highlighted the wrong text.** An application
+  that takes over the screen addresses cells in its own column order and knows
+  nothing about the reordering applied when drawing, so it was being told the
+  column the pointer was physically over and acted on a different cell. Mouse
+  reporting now sends the logical column.
+- **Dragging a selection across Hebrew.** Only the press position was mapped
+  back through the row's order; the end that follows the pointer, the
+  autoscroll past the window edge, and the prompt click target were not, so a
+  drag anchored a logical cell to a visual one and landed mirrored.
+- **Row width mismatch** between the renderer's map and the inverse used for
+  the mouse, which shifted every column on rows where the two differed.
+- **Arrow hints now agree with the arrow keys.** With `bidi-direction = rtl`
+  the arrow keys mirror on right-to-left rows, but an application's own hint
+  such as `press <-` sits in a Latin run, so UAX #9 left the glyph alone and it
+  named the opposite of the key that performs it. Horizontal arrows now mirror
+  on those rows too. Turn off with `bidi-mirror-arrows = false`.
+
 ## Ivrix [1.1.1] - 2026-07-28
 
 ### Fixed
