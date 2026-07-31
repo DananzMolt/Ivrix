@@ -1123,9 +1123,11 @@ struct TitlebarControlsView: View {
                     iconGeometryKeyPrefix: "titlebarControl_textDirectionIcon"
                 )
             }
-            .safeHelp(textDirection == .rtl
-                ? String(localized: "toolbar.textDirection.rtl", defaultValue: "Right-to-left")
-                : String(localized: "toolbar.textDirection.ltr", defaultValue: "Left-to-right"))
+            .safeHelp(KeyboardShortcutSettings.Action.toggleTextDirection.tooltip(
+                textDirection == .rtl
+                    ? String(localized: "toolbar.textDirection.rtl", defaultValue: "Right-to-left")
+                    : String(localized: "toolbar.textDirection.ltr", defaultValue: "Left-to-right")
+            ))
 
         }
 
