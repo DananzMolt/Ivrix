@@ -1067,6 +1067,15 @@ struct cmuxApp: App {
 
             Divider()
 
+            splitCommandButton(
+                title: String(localized: "menu.view.toggleTextDirection", defaultValue: "Toggle Text Direction (LTR/RTL)"),
+                shortcut: menuShortcut(for: .toggleTextDirection)
+            ) {
+                TerminalTextDirectionSettings.toggleDirection()
+            }
+
+            Divider()
+
             // Numbered workspace selection (9 = last workspace)
             ForEach(1...9, id: \.self) { number in
                 // `menuShortcut(for:)` already returns `.unbound` when the action

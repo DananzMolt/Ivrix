@@ -2,6 +2,117 @@
 
 All notable changes to cmux are documented here.
 
+## Ivrix [1.1.3] - 2026-07-31
+
+Typing ergonomics for a Hebrew keyboard: a shortcut for the direction toggle,
+and shell quotes that survive the Hebrew layout.
+
+### Added
+- **A keyboard shortcut for the text direction.** Flipping between left-to-right
+  and right-to-left meant reaching for the titlebar button. `Ctrl+Cmd+H` now does
+  it, and so does View > Toggle Text Direction. Rebind it in Settings > Keyboard
+  Shortcuts or as `shortcuts.bindings.toggleTextDirection` in `cmux.json`. The
+  titlebar button's tooltip names the shortcut, and follows a rebind.
+- **ASCII quotes when typing on a Hebrew layout.** A Hebrew layout puts geresh
+  and gershayim (`׳` `״`) on the apostrophe and quote keys, so `echo "hi"` typed
+  in Hebrew reached the shell as `echo ״hi״` and the shell never saw a quote at
+  all. Those two characters are now sent as ASCII `'` and `"`. Only for keys you
+  actually press: pasted text, dictation, and anything inserted programmatically
+  are untouched. Turn it off in Settings > Terminal to type acronyms such as
+  צה״ל, which need the real gershayim.
+
+### Changed
+- **Selection editing now asks whether input is marked, not which screen is up.**
+  Selecting text at a prompt and typing over it was refused outright whenever an
+  application had taken over the screen. That was a proxy for the real
+  requirement, which is `OSC 133` marking saying which cells are the edit buffer;
+  without it there is nothing to count arrow keys and deletes against. It now
+  checks for the marking directly. An application that emits no marks is refused
+  exactly as before, so nothing changes today: Claude Code, for one, takes the
+  screen and emits no marks, and its composer stays copy-only until it does.
+
+## Ivrix [1.1.2] - 2026-07-29
+
+Right-to-left fixes for selecting and moving around inside full-screen
+applications.
+
+### Fixed
+- **Selecting Hebrew inside a TUI highlighted the wrong text.** An application
+  that takes over the screen addresses cells in its own column order and knows
+  nothing about the reordering applied when drawing, so it was being told the
+  column the pointer was physically over and acted on a different cell. Mouse
+  reporting now sends the logical column.
+- **Dragging a selection across Hebrew.** Only the press position was mapped
+  back through the row's order; the end that follows the pointer, the
+  autoscroll past the window edge, and the prompt click target were not, so a
+  drag anchored a logical cell to a visual one and landed mirrored.
+- **Row width mismatch** between the renderer's map and the inverse used for
+  the mouse, which shifted every column on rows where the two differed.
+- **Arrow hints now agree with the arrow keys.** With `bidi-direction = rtl`
+  the arrow keys mirror on right-to-left rows, but an application's own hint
+  such as `press <-` sits in a Latin run, so UAX #9 left the glyph alone and it
+  named the opposite of the key that performs it. Horizontal arrows now mirror
+  on those rows too. Turn off with `bidi-mirror-arrows = false`.
+
+## Ivrix [1.1.1] - 2026-07-28
+
+### Fixed
+- **The "Update Available" button now updates Ivrix.** It ran Sparkle against
+  upstream cmux's release feed, so an Ivrix install was offered upstream's
+  releases; accepting one replaced Ivrix with cmux and lost the Hebrew build.
+  The feed now names this repository, and the app carries its own signing key
+  rather than upstream's, so only Ivrix releases can be offered or installed.
+  Releases publish a signed `appcast.xml`, without which the feed returned
+  nothing and no update was ever shown.
+
+  Installs of 1.1.0 and earlier carry the old feed and cannot be reached by
+  this fix. Download 1.1.1 once by hand; updates work from there on.
+
+### Changed
+- `scripts/build-ivrix.sh` refuses to build if the updater feed still points
+  upstream or the signing key is missing or upstream's.
+
+## Ivrix [1.1.0] - 2026-07-28
+
+Selection and text editing at the prompt, and the bidi fixes needed to make
+them correct in Hebrew.
+
+### Added
+- **Selection editing at the prompt.** Select text and type to replace it, or
+  press backspace/delete to remove it, the way a text editor behaves. A
+  terminal has no protocol for this, so the terminal places the shell's cursor
+  with arrow keys and deletes the selected positions itself. Needs `OSC 133`
+  input marking; controlled by `selection-edit-at-prompt`.
+- **Keyboard selection.** `Shift+Left/Right` selects by character and
+  `Shift+Option+Left/Right` by word. Direction is resolved per row, so on a
+  Hebrew line `Shift+Left` extends forward through the text, matching the way
+  the plain arrows already move.
+- **Cursor hides during selection**, since the selection is what the next
+  keystroke acts on. Controlled by `cursor-hide-while-selecting`.
+
+### Fixed
+- **Hyphenated words and numbers no longer scatter on a Hebrew line.** A
+  neutral character resolving left-to-right inside a right-to-left paragraph
+  was given embedding level 0 instead of 2, which cut the paragraph run in two
+  and reordered each half on its own: `max-height` rendered as
+  `max <hebrew> -height`. Two Latin words separated by a space broke the same
+  way.
+- **Numbers keep their digit order.** Weak types (UAX #9 W1-W7) were never
+  resolved, so number separators were treated as neutral: `1.5` rendered as
+  `5.1`, `3,000` as `000,3`, and `192.168.1.1` came out fully reversed.
+- **Backgrounds, selection highlight and decorations paint at the visual
+  column.** Only glyphs went through the bidi map, so on a Hebrew row the text
+  sat in one place and everything drawn around it sat in another.
+- **The mouse lands on the cell under the pointer in Hebrew.** Clicks were
+  handing a screen column straight in as a logical cell index, so dragging
+  selected text the user had not dragged over.
+- **Wide characters cost one arrow key, not two,** when clicking to move the
+  cursor past CJK or emoji.
+
+### Changed
+- Dev builds identify themselves as `ivrix-dev` rather than the upstream name.
+- The app now carries its own version rather than inheriting cmux's.
+
 ## Ivrix [1.0.0] - 2026-07-28
 
 Ivrix is a Hebrew-first fork of cmux. This release rebases the fork onto the

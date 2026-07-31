@@ -6197,7 +6197,10 @@ class GhosttyNSView: NSView, NSUserInterfaceValidations {
             }
         }
 
-        return chars
+        // Ivrix: the fallback text path, used when `interpretKeyEvents` produced
+        // no `insertText`. Same rewrite as the accumulator path so a Hebrew
+        // layout's quote keys reach the shell as ASCII quotes either way.
+        return HebrewAsciiQuotes.normalized(chars)
     }
 
     /// Get the unshifted codepoint for the key event
@@ -11896,6 +11899,13 @@ extension GhosttyNSView: NSTextInputClient {
             chars = v
         default:
             return
+        }
+
+        // Ivrix: only rewrite Hebrew quote punctuation for live keystrokes. The
+        // accumulator is non-nil exactly inside `keyDown`, so paste, dictation,
+        // and programmatic `NSTextInputClient` callers keep their text verbatim.
+        if keyTextAccumulator != nil {
+            chars = HebrewAsciiQuotes.normalized(chars)
         }
 
         if keyTextAccumulator != nil,

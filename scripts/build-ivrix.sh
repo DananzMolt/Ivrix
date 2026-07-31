@@ -52,6 +52,41 @@ PLIST="$APP/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c "Set :CFBundleExecutable Ivrix" "$PLIST"
 /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier com.ivrix.app" "$PLIST"
 
+# --- updater ---
+# The "Update Available" button reads these two. Both have to name Ivrix.
+#
+# Getting this wrong is not a cosmetic bug: an Ivrix build carrying upstream's
+# feed is offered upstream's releases, and installing one replaces Ivrix with
+# cmux. Ivrix 1.1.0 shipped in exactly that state, which is why this is now a
+# hard check rather than a comment.
+FEED_URL="${IVRIX_SPARKLE_FEED_URL:-https://github.com/DananzMolt/Ivrix/releases/latest/download/appcast.xml}"
+case "$FEED_URL" in
+  *manaflow-ai/cmux*)
+    echo "ERROR: refusing to build — Sparkle feed still points at upstream cmux:" >&2
+    echo "       $FEED_URL" >&2
+    exit 1
+    ;;
+esac
+/usr/libexec/PlistBuddy -c "Set :SUFeedURL $FEED_URL" "$PLIST" 2>/dev/null \
+  || /usr/libexec/PlistBuddy -c "Add :SUFeedURL string $FEED_URL" "$PLIST"
+
+# Sparkle refuses an update whose EdDSA signature does not match this key. The
+# upstream key is present in the checked-in Info.plist because upstream signs
+# with it; shipping it here would mean Ivrix trusts upstream's signature and
+# nobody else's, including ours.
+CMUX_PUBLIC_KEY="avjcgKibf1FTvhIjLBxhd+0HSpsXU4D0IGlVk8cgqRc="
+IVRIX_KEY="${IVRIX_SPARKLE_PUBLIC_KEY:-}"
+if [[ -z "$IVRIX_KEY" || "$IVRIX_KEY" == "$CMUX_PUBLIC_KEY" ]]; then
+  echo "ERROR: IVRIX_SPARKLE_PUBLIC_KEY is unset or is upstream's key." >&2
+  echo "       Generate the Ivrix keypair once (private half stays in your Keychain):" >&2
+  echo "         \$DERIVED/SourcePackages/artifacts/sparkle/Sparkle/bin/generate_keys" >&2
+  echo "       then re-run with IVRIX_SPARKLE_PUBLIC_KEY=<public key>" >&2
+  exit 1
+fi
+/usr/libexec/PlistBuddy -c "Set :SUPublicEDKey $IVRIX_KEY" "$PLIST" 2>/dev/null \
+  || /usr/libexec/PlistBuddy -c "Add :SUPublicEDKey string $IVRIX_KEY" "$PLIST"
+echo "    updater feed: $FEED_URL"
+
 echo "==> [3/6] Bundling fonts into Resources/Fonts"
 mkdir -p "$APP/Contents/Resources/Fonts"
 cp -f Resources/Fonts/*.ttf "$APP/Contents/Resources/Fonts/"

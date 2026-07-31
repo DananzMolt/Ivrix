@@ -1115,8 +1115,7 @@ struct TitlebarControlsView: View {
                 #if DEBUG
                 cmuxDebugLog("titlebar.textDirection")
                 #endif
-                let next: TerminalTextDirectionSettings.Direction = textDirection == .rtl ? .ltr : .rtl
-                TerminalTextDirectionSettings.setDirection(next)
+                TerminalTextDirectionSettings.toggleDirection()
             }) {
                 iconLabel(
                     systemName: textDirection == .rtl ? "text.alignright" : "text.alignleft",
@@ -1124,9 +1123,11 @@ struct TitlebarControlsView: View {
                     iconGeometryKeyPrefix: "titlebarControl_textDirectionIcon"
                 )
             }
-            .safeHelp(textDirection == .rtl
-                ? String(localized: "toolbar.textDirection.rtl", defaultValue: "Right-to-left")
-                : String(localized: "toolbar.textDirection.ltr", defaultValue: "Left-to-right"))
+            .safeHelp(KeyboardShortcutSettings.Action.toggleTextDirection.tooltip(
+                textDirection == .rtl
+                    ? String(localized: "toolbar.textDirection.rtl", defaultValue: "Right-to-left")
+                    : String(localized: "toolbar.textDirection.ltr", defaultValue: "Left-to-right")
+            ))
 
         }
 

@@ -960,6 +960,7 @@
           "sessionContentMaxWidth": "Largura máxima opcional, em pontos, para o conteúdo do terminal e do chat integrado do agente. Defina como false para usar toda a largura do painel.",
           "sessionContentAlignment": "Posicionamento horizontal do conteúdo do terminal e do chat integrado do agente quando sessionContentMaxWidth está ativado.",
           "copyOnSelect": "Quando true, copia o texto selecionado no terminal para a área de transferência do sistema quando a seleção é confirmada. Quando false, o cmux não emite uma substituição copy-on-select do Ghostty; a configuração e os padrões do Ghostty controlam o comportamento da área de transferência de seleção.",
+          "hebrewAsciiQuotes": "Quando true, digitar gueresh (U+05F3) ou guershayim (U+05F4) em um layout de teclado hebraico envia ' e \" ASCII ao terminal, para que as aspas funcionem no shell. Defina false para enviar a pontuação hebraica como digitada, necessário para siglas como צה״ל.",
           "scrollSpeed": "Multiplicador aplicado aos deslocamentos da roda de rolagem e do trackpad no terminal. Valores mais altos rolam mais rápido e os mais baixos, mais devagar.",
           "showTextBoxOnNewTerminals": "Mostra a entrada TextBox beta por padrão em áreas de trabalho, abas e divisões de terminal recém-criadas.",
           "focusTextBoxOnNewTerminals": "Foca a entrada TextBox beta por padrão em áreas de trabalho, abas e divisões de terminal recém-criadas. Focar também mostra o TextBox."

@@ -960,6 +960,7 @@
           "sessionContentMaxWidth": "Optionale maximale Breite in Punkten für Terminalinhalte und den integrierten Agentenchat. Mit false wird die gesamte Breite des Bereichs verwendet.",
           "sessionContentAlignment": "Horizontale Position von Terminalinhalten und integriertem Agentenchat, wenn sessionContentMaxWidth aktiviert ist.",
           "copyOnSelect": "Bei true wird ausgewählter Terminaltext in die Systemzwischenablage kopiert, sobald die Auswahl bestätigt wird. Bei false gibt cmux keine Ghostty-copy-on-select-Überschreibung aus; Ghostty-Konfiguration und Standardwerte steuern das Verhalten der Auswahlzwischenablage.",
+          "hebrewAsciiQuotes": "Bei true senden Geresh (U+05F3) und Gerschajim (U+05F4) auf einem hebräischen Tastaturlayout stattdessen ASCII ' und \" an das Terminal, damit Quoting in der Shell funktioniert. Auf false setzen, um hebräische Satzzeichen unverändert zu senden, was für Abkürzungen wie צה״ל nötig ist.",
           "scrollSpeed": "Multiplikator für die Scroll-Werte von Mausrad und Trackpad im Terminal. Höhere Werte scrollen schneller, niedrigere Werte langsamer.",
           "showTextBoxOnNewTerminals": "Zeigt die Beta-TextBox-Eingabe standardmaessig fuer neu erstellte Workspaces, Terminal-Tabs und Terminal-Splits an.",
           "focusTextBoxOnNewTerminals": "Fokussiert die Beta-TextBox-Eingabe standardmaessig fuer neu erstellte Workspaces, Terminal-Tabs und Terminal-Splits. Fokussieren zeigt die TextBox ebenfalls an."

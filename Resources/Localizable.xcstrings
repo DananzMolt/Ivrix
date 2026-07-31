@@ -186655,6 +186655,631 @@
         }
       }
     },
+    "menu.view.toggleTextDirection": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تبديل اتجاه النص (LTR/RTL)"
+          }
+        },
+        "bs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Promijeni smjer teksta (LTR/RTL)"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skift tekstretning (LTR/RTL)"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Textrichtung umschalten (LTR/RTL)"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toggle Text Direction (LTR/RTL)"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cambiar dirección del texto (LTR/RTL)"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Changer le sens du texte (LTR/RTL)"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cambia direzione del testo (LTR/RTL)"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "テキスト方向を切り替え（LTR/RTL）"
+          }
+        },
+        "km": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ប្ដូរទិសអក្សរ (LTR/RTL)"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "텍스트 방향 전환 (LTR/RTL)"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bytt tekstretning (LTR/RTL)"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przełącz kierunek tekstu (LTR/RTL)"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alternar direção do texto (LTR/RTL)"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Переключить направление текста (LTR/RTL)"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "สลับทิศทางข้อความ (LTR/RTL)"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Metin yönünü değiştir (LTR/RTL)"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перемкнути напрямок тексту (LTR/RTL)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "切换文本方向（LTR/RTL）"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "切換文字方向（LTR/RTL）"
+          }
+        }
+      }
+    },
+    "settings.terminal.hebrewAsciiQuotes": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "علامات اقتباس ASCII في تخطيط العبرية"
+          }
+        },
+        "bs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ASCII navodnici na hebrejskom rasporedu"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ASCII-anførselstegn på hebraisk tastaturlayout"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ASCII-Anführungszeichen bei hebräischem Layout"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ASCII Quotes on Hebrew Layout"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comillas ASCII con distribución hebrea"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guillemets ASCII avec la disposition hébraïque"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Virgolette ASCII con layout ebraico"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ヘブライ語配列で ASCII 引用符を使用"
+          }
+        },
+        "km": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "សញ្ញាសម្រង់ ASCII លើប្លង់ក្ដារចុចហេប្រ៊ូ"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "히브리어 자판에서 ASCII 따옴표 사용"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ASCII-anførselstegn på hebraisk tastaturoppsett"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cudzysłowy ASCII przy układzie hebrajskim"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aspas ASCII no layout hebraico"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Кавычки ASCII в еврейской раскладке"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เครื่องหมายคำพูด ASCII บนผังแป้นพิมพ์ฮีบรู"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İbranice düzende ASCII tırnak işaretleri"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Лапки ASCII в івритській розкладці"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "希伯来语键盘布局使用 ASCII 引号"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "希伯來文鍵盤配置使用 ASCII 引號"
+          }
+        }
+      }
+    },
+    "settings.terminal.hebrewAsciiQuotes.subtitleOff": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تُرسل علامات الترقيم العبرية كما تُكتب. لازمة للاختصارات مثل צה״ל، ولن يعمل الاقتباس في الصدفة من تخطيط العبرية."
+          }
+        },
+        "bs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hebrejski interpunkcijski znakovi šalju se kako su otkucani. Potrebno za skraćenice poput צה״ל; navodnici u shellu neće raditi s hebrejskog rasporeda."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hebraisk tegnsætning sendes, som den skrives. Nødvendigt til forkortelser som צה״ל; anførselstegn virker ikke i shellen fra et hebraisk layout."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hebräische Satzzeichen werden unverändert gesendet. Nötig für Abkürzungen wie צה״ל; Quoting in der Shell funktioniert dann mit hebräischem Layout nicht."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hebrew punctuation is sent as typed. Needed for acronyms such as צה״ל; shell quoting will not work from a Hebrew layout."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La puntuación hebrea se envía tal cual. Necesario para siglas como צה״ל; las comillas del intérprete de comandos no funcionarán con distribución hebrea."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La ponctuation hébraïque est envoyée telle quelle. Nécessaire pour les sigles comme צה״ל ; les guillemets du shell ne fonctionneront pas avec la disposition hébraïque."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La punteggiatura ebraica viene inviata così com'è. Serve per acronimi come צה״ל; le virgolette della shell non funzioneranno con layout ebraico."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ヘブライ語の約物をそのまま送信します。צה״ל のような略語に必要ですが、ヘブライ語配列ではシェルの引用符が機能しません。"
+          }
+        },
+        "km": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "សញ្ញាវណ្ណយុត្តហេប្រ៊ូត្រូវបានផ្ញើតាមការវាយ។ ចាំបាច់សម្រាប់អក្សរកាត់ដូចជា צה״ל ប៉ុន្តែសញ្ញាសម្រង់ក្នុង shell នឹងមិនដំណើរការពីប្លង់ហេប្រ៊ូទេ។"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "히브리어 문장 부호를 입력한 그대로 보냅니다. צה״ל 같은 약어에 필요하지만, 히브리어 자판에서는 셸 따옴표가 동작하지 않습니다."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hebraisk tegnsetting sendes slik den skrives. Nødvendig for forkortelser som צה״ל; anførselstegn i skallet vil ikke virke fra et hebraisk oppsett."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hebrajska interpunkcja jest wysyłana bez zmian. Potrzebne do skrótowców takich jak צה״ל; cudzysłowy w powłoce nie zadziałają z układu hebrajskiego."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A pontuação hebraica é enviada como digitada. Necessário para siglas como צה״ל; as aspas do shell não funcionarão no layout hebraico."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Еврейская пунктуация отправляется как есть. Нужно для аббревиатур вроде צה״ל; кавычки в оболочке из еврейской раскладки работать не будут."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เครื่องหมายวรรคตอนภาษาฮีบรูจะถูกส่งตามที่พิมพ์ จำเป็นสำหรับอักษรย่อ เช่น צה״ל แต่เครื่องหมายคำพูดในเชลล์จะไม่ทำงานจากผังแป้นพิมพ์ฮีบรู"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İbranice noktalama yazıldığı gibi gönderilir. צה״ל gibi kısaltmalar için gerekir; İbranice düzenden kabuk tırnakları çalışmaz."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Івритська пунктуація надсилається як є. Потрібно для абревіатур на кшталт צה״ל; лапки в оболонці з івритської розкладки не працюватимуть."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "希伯来语标点按输入原样发送。צה״ל 之类的缩写需要它，但在希伯来语布局下 shell 引号将无法使用。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "希伯來文標點按輸入原樣送出。צה״ל 之類的縮寫需要它，但在希伯來文配置下 shell 引號將無法使用。"
+          }
+        }
+      }
+    },
+    "settings.terminal.hebrewAsciiQuotes.subtitleOn": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "كتابة الجيرش أو الجيرشايم (׳ ״) في تخطيط العبرية ترسل ' و \" بترميز ASCII بدلاً منهما، فيعمل الاقتباس في الصدفة."
+          }
+        },
+        "bs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kucanje gereša ili geršajima (׳ ״) na hebrejskom rasporedu šalje ASCII ' i \", pa navodnici u shellu rade."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Når du skriver geresh eller gershayim (׳ ״) på et hebraisk layout, sendes ASCII ' og \" i stedet, så anførselstegn virker i shellen."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geresh oder Gerschajim (׳ ״) auf hebräischem Layout senden stattdessen ASCII ' und \", damit Quoting in der Shell funktioniert."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Typing geresh or gershayim (׳ ״) on a Hebrew layout sends ASCII ' and \" instead, so shell quoting works."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Al escribir gueresh o guershayim (׳ ״) con distribución hebrea se envían ' y \" ASCII, para que las comillas funcionen en el intérprete de comandos."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saisir un guéresh ou un guershayim (׳ ״) avec la disposition hébraïque envoie ' et \" ASCII, pour que les guillemets fonctionnent dans le shell."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Digitando gheresh o ghershayim (׳ ״) con layout ebraico vengono inviati ' e \" ASCII, così le virgolette funzionano nella shell."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ヘブライ語配列でゲレシュ・ゲルシャイム（׳ ״）を入力すると ASCII の ' と \" を送信し、シェルの引用符が機能します。"
+          }
+        },
+        "km": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ការវាយ geresh ឬ gershayim (׳ ״) លើប្លង់ហេប្រ៊ូ នឹងផ្ញើ ' និង \" បែប ASCII ជំនួស ដើម្បីឲ្យសញ្ញាសម្រង់ក្នុង shell ដំណើរការ។"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "히브리어 자판에서 게레시나 게르샤임(׳ ״)을 입력하면 ASCII ' 와 \" 를 대신 보내 셸 따옴표가 동작합니다."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Å skrive geresh eller gershayim (׳ ״) på hebraisk oppsett sender ASCII ' og \" i stedet, slik at anførselstegn virker i skallet."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wpisanie gereszu lub gerszajim (׳ ״) w układzie hebrajskim wysyła zamiast nich ASCII ' i \", dzięki czemu cudzysłowy działają w powłoce."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Digitar gueresh ou guershayim (׳ ״) no layout hebraico envia ' e \" ASCII, para que as aspas funcionem no shell."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ввод гереша или гершаима (׳ ״) в еврейской раскладке отправляет ASCII ' и \", поэтому кавычки работают в оболочке."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "การพิมพ์ geresh หรือ gershayim (׳ ״) บนผังแป้นพิมพ์ฮีบรูจะส่ง ' และ \" แบบ ASCII แทน เพื่อให้เครื่องหมายคำพูดในเชลล์ทำงานได้"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İbranice düzende geresh veya gershayim (׳ ״) yazmak bunların yerine ASCII ' ve \" gönderir, böylece kabuktaki tırnaklar çalışır."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Введення гереша або гершаїма (׳ ״) в івритській розкладці надсилає ASCII ' і \", тож лапки працюють в оболонці."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在希伯来语键盘布局下输入 geresh 或 gershayim（׳ ״）时改为发送 ASCII 的 ' 和 \"，这样 shell 引号才有效。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在希伯來文鍵盤配置下輸入 geresh 或 gershayim（׳ ״）時改為送出 ASCII 的 ' 與 \"，這樣 shell 引號才有效。"
+          }
+        }
+      }
+    },
+    "shortcut.toggleTextDirection.label": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تبديل اتجاه النص (LTR/RTL)"
+          }
+        },
+        "bs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Promijeni smjer teksta (LTR/RTL)"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skift tekstretning (LTR/RTL)"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Textrichtung umschalten (LTR/RTL)"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toggle Text Direction (LTR/RTL)"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cambiar dirección del texto (LTR/RTL)"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Changer le sens du texte (LTR/RTL)"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cambia direzione del testo (LTR/RTL)"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "テキスト方向を切り替え（LTR/RTL）"
+          }
+        },
+        "km": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ប្ដូរទិសអក្សរ (LTR/RTL)"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "텍스트 방향 전환 (LTR/RTL)"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bytt tekstretning (LTR/RTL)"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przełącz kierunek tekstu (LTR/RTL)"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alternar direção do texto (LTR/RTL)"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Переключить направление текста (LTR/RTL)"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "สลับทิศทางข้อความ (LTR/RTL)"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Metin yönünü değiştir (LTR/RTL)"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перемкнути напрямок тексту (LTR/RTL)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "切换文本方向（LTR/RTL）"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "切換文字方向（LTR/RTL）"
+          }
+        }
+      }
+    },
     "settings.terminal.hebrewFont.subtitle": {
       "localizations": {
         "en": {

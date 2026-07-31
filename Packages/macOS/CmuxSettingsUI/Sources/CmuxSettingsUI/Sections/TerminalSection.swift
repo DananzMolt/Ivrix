@@ -24,6 +24,7 @@ public struct TerminalSection: View {
     @State private var scrollBar: DefaultsValueModel<Bool>
     @State private var copyOnSelect: DefaultsValueModel<Bool>
     @State private var hebrewFont: DefaultsValueModel<HebrewFontFace>
+    @State private var hebrewAsciiQuotes: DefaultsValueModel<Bool>
     @State private var autoResume: DefaultsValueModel<Bool>
     @State private var hibernation: DefaultsValueModel<Bool>
     @State private var idleSeconds: DefaultsValueModel<Double>
@@ -51,6 +52,7 @@ public struct TerminalSection: View {
         _scrollBar = State(initialValue: DefaultsValueModel(store: defaultsStore, key: catalog.terminal.showScrollBar))
         _copyOnSelect = State(initialValue: DefaultsValueModel(store: defaultsStore, key: catalog.terminal.copyOnSelect))
         _hebrewFont = State(initialValue: DefaultsValueModel(store: defaultsStore, key: catalog.terminal.hebrewFont))
+        _hebrewAsciiQuotes = State(initialValue: DefaultsValueModel(store: defaultsStore, key: catalog.terminal.hebrewAsciiQuotes))
         _autoResume = State(initialValue: DefaultsValueModel(store: defaultsStore, key: catalog.terminal.autoResumeAgentSessions))
         _hibernation = State(initialValue: DefaultsValueModel(store: defaultsStore, key: catalog.terminal.agentHibernationEnabled))
         _idleSeconds = State(initialValue: DefaultsValueModel(store: defaultsStore, key: catalog.terminal.agentHibernationIdleSeconds))
@@ -80,6 +82,7 @@ public struct TerminalSection: View {
             scrollBar,
             copyOnSelect,
             hebrewFont,
+            hebrewAsciiQuotes,
             autoResume,
             hibernation,
             idleSeconds,
@@ -337,6 +340,25 @@ public struct TerminalSection: View {
                 .pickerStyle(.menu)
                 .frame(width: 210)
                 .accessibilityIdentifier("SettingsHebrewFontPicker")
+            }
+            SettingsCardDivider()
+            SettingsCardRow(
+                configurationReview: .json("terminal.hebrewAsciiQuotes"),
+                String(localized: "settings.terminal.hebrewAsciiQuotes", defaultValue: "ASCII Quotes on Hebrew Layout"),
+                subtitle: hebrewAsciiQuotes.current
+                    ? String(
+                        localized: "settings.terminal.hebrewAsciiQuotes.subtitleOn",
+                        defaultValue: "Typing geresh or gershayim (׳ ״) on a Hebrew layout sends ASCII ' and \" instead, so shell quoting works."
+                    )
+                    : String(
+                        localized: "settings.terminal.hebrewAsciiQuotes.subtitleOff",
+                        defaultValue: "Hebrew punctuation is sent as typed. Needed for acronyms such as צה״ל; shell quoting will not work from a Hebrew layout."
+                    )
+            ) {
+                Toggle("", isOn: Binding(get: { hebrewAsciiQuotes.current }, set: { hebrewAsciiQuotes.set($0) }))
+                    .labelsHidden()
+                    .controlSize(.small)
+                    .accessibilityIdentifier("SettingsTerminalHebrewAsciiQuotesToggle")
             }
             SettingsCardDivider()
             SettingsCardRow(

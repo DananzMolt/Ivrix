@@ -44,6 +44,13 @@ public struct TerminalCatalogSection: SettingCatalogSection {
         userDefaultsKey: HebrewFontFace.settingsPath
     )
 
+    /// Rewrite Hebrew geresh/gershayim to ASCII `'`/`"` while typing.
+    public let hebrewAsciiQuotes = DefaultsKey<Bool>(
+        id: "terminal.hebrewAsciiQuotes",
+        defaultValue: true,
+        userDefaultsKey: "terminal.hebrewAsciiQuotes"
+    )
+
     public let copyOnSelect = DefaultsKey<Bool>(
         id: "terminal.copyOnSelect",
         defaultValue: false,
