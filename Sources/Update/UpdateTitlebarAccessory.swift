@@ -1115,8 +1115,7 @@ struct TitlebarControlsView: View {
                 #if DEBUG
                 cmuxDebugLog("titlebar.textDirection")
                 #endif
-                let next: TerminalTextDirectionSettings.Direction = textDirection == .rtl ? .ltr : .rtl
-                TerminalTextDirectionSettings.setDirection(next)
+                TerminalTextDirectionSettings.toggleDirection()
             }) {
                 iconLabel(
                     systemName: textDirection == .rtl ? "text.alignright" : "text.alignleft",

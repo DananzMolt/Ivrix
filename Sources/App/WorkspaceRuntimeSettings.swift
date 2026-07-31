@@ -240,6 +240,19 @@ enum TerminalTextDirectionSettings {
         }
     }
 
+    /// Flips the direction. The single mutation path shared by the titlebar
+    /// control, the toolbar segmented control, the View menu item, and the
+    /// `toggleTextDirection` keyboard shortcut.
+    @discardableResult
+    static func toggleDirection(
+        defaults: UserDefaults = .standard,
+        notificationCenter: NotificationCenter = .default
+    ) -> Direction {
+        let next: Direction = direction(defaults: defaults) == .rtl ? .ltr : .rtl
+        setDirection(next, defaults: defaults, notificationCenter: notificationCenter)
+        return next
+    }
+
     static func notifyDidChange(notificationCenter: NotificationCenter = .default) {
         notificationCenter.post(name: didChangeNotification, object: nil)
     }
