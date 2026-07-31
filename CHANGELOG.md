@@ -2,6 +2,35 @@
 
 All notable changes to cmux are documented here.
 
+## Ivrix [1.1.3] - 2026-07-31
+
+Typing ergonomics for a Hebrew keyboard: a shortcut for the direction toggle,
+and shell quotes that survive the Hebrew layout.
+
+### Added
+- **A keyboard shortcut for the text direction.** Flipping between left-to-right
+  and right-to-left meant reaching for the titlebar button. `Ctrl+Cmd+H` now does
+  it, and so does View > Toggle Text Direction. Rebind it in Settings > Keyboard
+  Shortcuts or as `shortcuts.bindings.toggleTextDirection` in `cmux.json`. The
+  titlebar button's tooltip names the shortcut, and follows a rebind.
+- **ASCII quotes when typing on a Hebrew layout.** A Hebrew layout puts geresh
+  and gershayim (`׳` `״`) on the apostrophe and quote keys, so `echo "hi"` typed
+  in Hebrew reached the shell as `echo ״hi״` and the shell never saw a quote at
+  all. Those two characters are now sent as ASCII `'` and `"`. Only for keys you
+  actually press: pasted text, dictation, and anything inserted programmatically
+  are untouched. Turn it off in Settings > Terminal to type acronyms such as
+  צה״ל, which need the real gershayim.
+
+### Changed
+- **Selection editing now asks whether input is marked, not which screen is up.**
+  Selecting text at a prompt and typing over it was refused outright whenever an
+  application had taken over the screen. That was a proxy for the real
+  requirement, which is `OSC 133` marking saying which cells are the edit buffer;
+  without it there is nothing to count arrow keys and deletes against. It now
+  checks for the marking directly. An application that emits no marks is refused
+  exactly as before, so nothing changes today: Claude Code, for one, takes the
+  screen and emits no marks, and its composer stays copy-only until it does.
+
 ## Ivrix [1.1.2] - 2026-07-29
 
 Right-to-left fixes for selecting and moving around inside full-screen
