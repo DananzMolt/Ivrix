@@ -15,7 +15,9 @@ final class QuitConfirmationAlertPresenter: NSObject, NSWindowDelegate {
         completion: @escaping Completion
     ) {
         self.alert = alert ?? Self.makeAlert()
-        self.presentingWindowProvider = presentingWindowProvider ?? { cmuxMainWindowForModalPresentation() }
+        self.presentingWindowProvider = presentingWindowProvider ?? {
+            NSApp.cmuxMainWindowForModalPresentation()
+        }
         self.completion = completion
         super.init()
     }
@@ -23,7 +25,7 @@ final class QuitConfirmationAlertPresenter: NSObject, NSWindowDelegate {
     private static func makeAlert() -> NSAlert {
         let alert = NSAlert()
         alert.alertStyle = .warning
-        alert.messageText = String(localized: "dialog.quitCmux.title", defaultValue: "Quit cmux?")
+        alert.messageText = String(localized: "dialog.quitCmux.title", defaultValue: "Quit Ivrix?")
         alert.informativeText = String(localized: "dialog.quitCmux.message", defaultValue: "This will close all windows and workspaces.")
         alert.addButton(withTitle: String(localized: "dialog.quitCmux.quit", defaultValue: "Quit"))
         alert.addButton(withTitle: String(localized: "common.cancel", defaultValue: "Cancel"))
@@ -98,6 +100,13 @@ extension AppDelegate {
     }
 
     func hasQuitConfirmationDirtyWorkspaces() -> Bool {
+        // Per-window Docks die with their windows (and with the app), so their
+        // busy terminals count toward the quit warning exactly like a
+        // workspace Dock's do via `Workspace.needsConfirmClose()`.
+        if existingWindowDocks.contains(where: { $0.needsConfirmClose() }) {
+            return true
+        }
+
         var visitedManagers = Set<ObjectIdentifier>()
 
         func managerHasDirtyWorkspace(_ manager: TabManager?) -> Bool {

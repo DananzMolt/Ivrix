@@ -457,14 +457,14 @@ final class KeyboardShortcutContextTests: XCTestCase {
         let button = RecorderHostButton(frame: .zero)
         defer {
             if RecorderHostButton.isActivelyRecording {
-                button.debugStopRecording()
+                button.stopRecording()
             }
         }
 
         XCTAssertFalse(RecorderHostButton.isActivelyRecording)
         XCTAssertEqual(KeyboardShortcutSettings.menuShortcut(for: .closeTab), KeyboardShortcutSettings.shortcut(for: .closeTab))
 
-        button.debugStartRecording()
+        button.startRecording()
 
         XCTAssertTrue(RecorderHostButton.isActivelyRecording)
         XCTAssertEqual(KeyboardShortcutSettings.menuShortcut(for: .closeTab), .unbound)
@@ -511,6 +511,44 @@ final class KeyboardShortcutContextTests: XCTestCase {
                 alwaysShowShortcutHints: false,
                 modifierPressed: true
             )
+        )
+    }
+
+    /// Ivrix: the titlebar RTL/LTR button's hover tooltip names the direction
+    /// *and* the shortcut that flips it, and follows a rebind.
+    func testTextDirectionTitlebarTooltipShowsConfiguredShortcut() throws {
+        let originalSettingsFileStore = KeyboardShortcutSettings.settingsFileStore
+        let directoryURL = try makeTemporaryDirectory()
+        defer {
+            KeyboardShortcutSettings.resetAll()
+            KeyboardShortcutSettings.settingsFileStore = originalSettingsFileStore
+            try? FileManager.default.removeItem(at: directoryURL)
+        }
+
+        let settingsFileURL = directoryURL.appendingPathComponent("cmux.json", isDirectory: false)
+        try writeSettingsFile("{}", to: settingsFileURL)
+        KeyboardShortcutSettings.settingsFileStore = KeyboardShortcutSettingsFileStore(
+            primaryPath: settingsFileURL.path,
+            fallbackPath: nil,
+            additionalFallbackPaths: [],
+            startWatching: false
+        )
+        KeyboardShortcutSettings.resetAll()
+
+        let defaultShortcut = KeyboardShortcutSettings.shortcut(for: .toggleTextDirection)
+        XCTAssertFalse(defaultShortcut.isUnbound)
+
+        let defaultTooltip = KeyboardShortcutSettings.Action.toggleTextDirection.tooltip("Right-to-left")
+        XCTAssertTrue(defaultTooltip.hasPrefix("Right-to-left"))
+        XCTAssertTrue(defaultTooltip.contains(defaultShortcut.displayString))
+
+        let remappedShortcut = StoredShortcut(key: "j", command: true, shift: true, option: true, control: false)
+        KeyboardShortcutSettings.setShortcut(remappedShortcut, for: .toggleTextDirection)
+
+        XCTAssertTrue(
+            KeyboardShortcutSettings.Action.toggleTextDirection
+                .tooltip("Left-to-right")
+                .contains(remappedShortcut.displayString)
         )
     }
 

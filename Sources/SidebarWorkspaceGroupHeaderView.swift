@@ -29,6 +29,7 @@ struct SidebarWorkspaceGroupHeaderView: View, Equatable {
             lhs.shortcutDigit == rhs.shortcutDigit &&
             lhs.shortcutModifierSymbol == rhs.shortcutModifierSymbol &&
             lhs.showsShortcutHint == rhs.showsShortcutHint &&
+            lhs.isPointerHovering == rhs.isPointerHovering &&
             lhs.shortcutHintXOffset == rhs.shortcutHintXOffset &&
             lhs.shortcutHintYOffset == rhs.shortcutHintYOffset &&
             lhs.fontScale == rhs.fontScale &&
@@ -59,6 +60,7 @@ struct SidebarWorkspaceGroupHeaderView: View, Equatable {
     let shortcutDigit: Int?
     let shortcutModifierSymbol: String?
     let showsShortcutHint: Bool
+    let isPointerHovering: Bool
     let shortcutHintXOffset: Double
     let shortcutHintYOffset: Double
     let fontScale: CGFloat
@@ -85,9 +87,16 @@ struct SidebarWorkspaceGroupHeaderView: View, Equatable {
     let onDelete: () -> Void
     let onEditConfig: () -> Void
     let onOpenDocs: () -> Void
+    let onContextMenuAppear: () -> Void
+    let onContextMenuDisappear: () -> Void
 
-    @State private var rowInteractionState = SidebarWorkspaceRowInteractionState()
-    @State private var rowHeight: CGFloat = 1
+    @State private var contextMenuVisible = false
+
+#if DEBUG
+    // Plain-value environment probe set only by SidebarLazyLayoutScaleTests;
+    // default no-op. See SidebarLazyContractProbe.
+    @Environment(\.sidebarLazyContractProbe) private var sidebarLazyContractProbe
+#endif
 
     private var metrics: SidebarWorkspaceGroupHeaderMetrics {
         SidebarWorkspaceGroupHeaderMetrics(fontScale: fontScale)
@@ -111,20 +120,26 @@ struct SidebarWorkspaceGroupHeaderView: View, Equatable {
         return "\(shortcutModifierSymbol)\(shortcutDigit)"
     }
 
-    private var rowHeightProbe: some View {
-        GeometryReader { proxy in
-            Color.clear
-                .onAppear {
-                    rowHeight = max(proxy.size.height, 1)
-                }
-                .onChange(of: proxy.size.height) { _, newHeight in
-                    rowHeight = max(newHeight, 1)
-                }
-        }
+    private var pinnedGroupTooltip: String {
+        String(localized: "workspaceGroup.pinned.tooltip", defaultValue: "Pinned group")
     }
 
     var body: some View {
+#if DEBUG
+        let _ = { sidebarLazyContractProbe.groupHeaderRowBody?() }()
+#endif
         HStack(spacing: 4) {
+            if isPinned {
+                CmuxSystemSymbolImage(
+                    magnified: "pin.fill",
+                    pointSize: metrics.pinnedIconFontSize,
+                    weight: .semibold
+                )
+                .foregroundStyle(Color.secondary.opacity(0.8))
+                .frame(width: metrics.iconFrame, height: metrics.iconFrame)
+                .safeHelp(pinnedGroupTooltip)
+                .accessibilityLabel(Text(pinnedGroupTooltip))
+            }
             CmuxSystemSymbolImage(
                 systemName: isCollapsed ? "chevron.right" : "chevron.down",
                 pointSize: metrics.chevronFontSize,
@@ -182,10 +197,7 @@ struct SidebarWorkspaceGroupHeaderView: View, Equatable {
                 defaultValue: "Focus the group's anchor workspace"
             )))
 
-            let plusVisible = rowInteractionState.shouldShowCloseButton(
-                canCloseWorkspace: true,
-                shortcutHintModeActive: showsShortcutHint
-            )
+            let plusVisible = isPointerHovering && !contextMenuVisible && !showsShortcutHint
             Button(action: onTapPlus) {
                 CmuxSystemSymbolImage(
                     systemName: "plus",
@@ -214,6 +226,14 @@ struct SidebarWorkspaceGroupHeaderView: View, Equatable {
                     ),
                     action: onTapPlus
                 )
+                .onAppear {
+                    contextMenuVisible = true
+                    onContextMenuAppear()
+                }
+                .onDisappear {
+                    contextMenuVisible = false
+                    onContextMenuDisappear()
+                }
                 if !cwdContextMenuItems.isEmpty {
                     Divider()
                     ForEach(cwdContextMenuItems) { item in
@@ -260,7 +280,6 @@ struct SidebarWorkspaceGroupHeaderView: View, Equatable {
             offsetY: shortcutHintYOffset
         )
         .padding(.horizontal, SidebarWorkspaceListMetrics.rowOuterHorizontalPadding)
-        .background { rowHeightProbe }
         .shortcutHintVisibilityAnimation(value: showsShortcutHint)
         .opacity(isBeingDragged ? 0.6 : 1)
         .overlay(alignment: .top) {
@@ -279,9 +298,6 @@ struct SidebarWorkspaceGroupHeaderView: View, Equatable {
                 leadingInset: metrics.groupScopedBottomDropIndicatorLeadingInset
             )
         }
-        .overlay {
-            SidebarWorkspaceRowHoverTracker(rowInteractionState: $rowInteractionState)
-        }
         .onDrag(onDragStart)
         .internalOnlyTabDrag()
         .contextMenu {
@@ -292,6 +308,14 @@ struct SidebarWorkspaceGroupHeaderView: View, Equatable {
                 ),
                 action: onTapPlus
             )
+            .onAppear {
+                contextMenuVisible = true
+                onContextMenuAppear()
+            }
+            .onDisappear {
+                contextMenuVisible = false
+                onContextMenuDisappear()
+            }
             Divider()
             Button(
                 String(
@@ -373,7 +397,7 @@ struct SidebarWorkspaceGroupHeaderView: View, Equatable {
             Button(
                 String(
                     localized: "workspaceGroup.contextMenu.ungroup",
-                    defaultValue: "Ungroup (Keep Workspaces)"
+                    defaultValue: "Ungroup Workspaces"
                 ),
                 action: onUngroup
             )
@@ -384,7 +408,7 @@ struct SidebarWorkspaceGroupHeaderView: View, Equatable {
                 Text(
                     String(
                         localized: "workspaceGroup.contextMenu.delete",
-                        defaultValue: "Delete Group (Close Workspaces)"
+                        defaultValue: "Delete Group"
                     )
                 )
             }

@@ -126,6 +126,20 @@ while ! mkdir "$LOCK_DIR" 2>/dev/null; do
 done
 trap 'rmdir "$LOCK_DIR" >/dev/null 2>&1 || true' EXIT
 
+# Local dev escape hatch: accept a manually-placed GhosttyKit.xcframework
+# (e.g. built by CI on the DananzMolt fork for the Hebrew/BIDI work) without
+# checksum pinning. Set CMUX_GHOSTTYKIT_LOCAL=1 and drop the framework at
+# LOCAL_XCFRAMEWORK (ghostty/macos/GhosttyKit.xcframework).
+if [[ "${CMUX_GHOSTTYKIT_LOCAL:-0}" == "1" ]]; then
+  if [[ -d "$LOCAL_XCFRAMEWORK" ]]; then
+    echo "==> CMUX_GHOSTTYKIT_LOCAL=1: using local GhosttyKit at $LOCAL_XCFRAMEWORK (checksum bypassed)"
+    ln -sfn "$LOCAL_XCFRAMEWORK" "$PROJECT_DIR/GhosttyKit.xcframework"
+    exit 0
+  fi
+  echo "==> CMUX_GHOSTTYKIT_LOCAL=1 set but no framework at $LOCAL_XCFRAMEWORK" >&2
+  exit 1
+fi
+
 try_fetch_prebuilt_xcframework() {
   # Only attempt when Ghostty submodule is clean — dirty trees won't match any
   # published release. Opt-out via CMUX_GHOSTTYKIT_NO_PREBUILT=1.
