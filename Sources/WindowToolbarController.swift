@@ -7,11 +7,13 @@ import SwiftUI
 final class WindowToolbarController: NSObject, NSToolbarDelegate {
     private let commandItemIdentifier = NSToolbarItem.Identifier("cmux.focusedCommand")
     private let layoutModeItemIdentifier = NSToolbarItem.Identifier("cmux.layoutMode")
+    private let textDirectionItemIdentifier = NSToolbarItem.Identifier("cmux.textDirection")
 
     private weak var tabManager: TabManager?
 
     private var commandLabels: [ObjectIdentifier: NSTextField] = [:]
     private var layoutModeControls: [ObjectIdentifier: NSSegmentedControl] = [:]
+    private var textDirectionControls: [ObjectIdentifier: NSSegmentedControl] = [:]
     private var observers: [NSObjectProtocol] = []
     private let focusedCommandUpdateCoalescer = NotificationBurstCoalescer(delay: 1.0 / 30.0)
     private var lastKnownPresentationMode: WorkspacePresentationModeSettings.Mode = WorkspacePresentationModeSettings.mode()
@@ -41,7 +43,7 @@ final class WindowToolbarController: NSObject, NSToolbarDelegate {
             queue: .main
         ) { [weak self] notification in
             let changedWorkspaceId = GhosttyTitleChange(notification: notification)?.tabId
-            Task { @MainActor [weak self, changedWorkspaceId] in
+            MainActor.assumeIsolated { [weak self] in
                 guard let self,
                       self.tabManager?.shouldScheduleRawTitleRefresh(forWorkspaceId: changedWorkspaceId) == true else { return }
                 self.scheduleFocusedCommandTextUpdate()
@@ -53,9 +55,14 @@ final class WindowToolbarController: NSObject, NSToolbarDelegate {
             object: tabManager,
             queue: .main
         ) { [weak self] notification in
-            let changedWorkspaceId = notification.userInfo?[GhosttyNotificationKey.tabId] as? UUID
-            Task { @MainActor [weak self, changedWorkspaceId] in
-                guard let self, changedWorkspaceId == self.tabManager?.selectedTabId, self.tabManager?.shouldScheduleRawTitleRefresh(forWorkspaceId: changedWorkspaceId) == false else { return }
+            // Extract Sendable values where the notification is delivered; the
+            // non-Sendable Notification must not cross the Task boundary.
+            let tabId = notification.userInfo?[GhosttyNotificationKey.tabId] as? UUID
+            let surfaceSourced = notification.userInfo?[GhosttyNotificationKey.surfaceId] != nil
+            Task { @MainActor [weak self] in
+                guard let self,
+                      self.tabManager?.shouldRefreshTitleChrome(tabId: tabId, surfaceSourced: surfaceSourced) == true
+                else { return }
                 self.scheduleFocusedCommandTextUpdate()
             }
         })
@@ -78,6 +85,16 @@ final class WindowToolbarController: NSObject, NSToolbarDelegate {
         ) { [weak self] _ in
             Task { @MainActor [weak self] in
                 self?.updateLayoutModeSelection()
+            }
+        })
+
+        observers.append(center.addObserver(
+            forName: TerminalTextDirectionSettings.didChangeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.updateTextDirectionSelection()
             }
         })
 
@@ -215,11 +232,11 @@ final class WindowToolbarController: NSObject, NSToolbarDelegate {
     // MARK: - NSToolbarDelegate
 
     func toolbarAllowedItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
-        [layoutModeItemIdentifier, commandItemIdentifier, .flexibleSpace]
+        [layoutModeItemIdentifier, textDirectionItemIdentifier, commandItemIdentifier, .flexibleSpace]
     }
 
     func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
-        [layoutModeItemIdentifier, commandItemIdentifier, .flexibleSpace]
+        [layoutModeItemIdentifier, textDirectionItemIdentifier, commandItemIdentifier, .flexibleSpace]
     }
 
     func toolbar(_ toolbar: NSToolbar, itemForItemIdentifier itemIdentifier: NSToolbarItem.Identifier, willBeInsertedIntoToolbar flag: Bool) -> NSToolbarItem? {
@@ -269,6 +286,39 @@ final class WindowToolbarController: NSObject, NSToolbarDelegate {
             return item
         }
 
+        if itemIdentifier == textDirectionItemIdentifier {
+            let item = NSToolbarItem(itemIdentifier: itemIdentifier)
+            let segmented = NSSegmentedControl()
+            segmented.segmentStyle = .texturedRounded
+            segmented.trackingMode = .selectOne
+            segmented.segmentCount = 2
+            segmented.controlSize = .small
+            segmented.setImage(
+                NSImage(systemSymbolName: "text.alignleft", accessibilityDescription: nil),
+                forSegment: TextDirectionSegment.ltr.rawValue
+            )
+            segmented.setImage(
+                NSImage(systemSymbolName: "text.alignright", accessibilityDescription: nil),
+                forSegment: TextDirectionSegment.rtl.rawValue
+            )
+            segmented.setToolTip(
+                String(localized: "toolbar.textDirection.ltr", defaultValue: "Left-to-right"),
+                forSegment: TextDirectionSegment.ltr.rawValue
+            )
+            segmented.setToolTip(
+                String(localized: "toolbar.textDirection.rtl", defaultValue: "Right-to-left"),
+                forSegment: TextDirectionSegment.rtl.rawValue
+            )
+            segmented.target = self
+            segmented.action = #selector(textDirectionSegmentChanged(_:))
+            item.view = segmented
+            item.label = String(localized: "toolbar.textDirection.label", defaultValue: "Direction")
+            item.toolTip = String(localized: "toolbar.textDirection.tooltip", defaultValue: "Text Direction (RTL/LTR)")
+            textDirectionControls[ObjectIdentifier(toolbar)] = segmented
+            updateTextDirectionSelection()
+            return item
+        }
+
         return nil
     }
 
@@ -289,6 +339,27 @@ final class WindowToolbarController: NSObject, NSToolbarDelegate {
         let mode = tabManager?.selectedWorkspace?.layoutMode ?? .splits
         let segment = mode == .canvas ? LayoutModeSegment.canvas.rawValue : LayoutModeSegment.splits.rawValue
         for control in layoutModeControls.values where control.selectedSegment != segment {
+            control.selectedSegment = segment
+        }
+    }
+
+    // MARK: - Text direction toggle (RTL/LTR)
+
+    private enum TextDirectionSegment: Int {
+        case ltr = 0
+        case rtl = 1
+    }
+
+    @objc private func textDirectionSegmentChanged(_ sender: NSSegmentedControl) {
+        let target: TerminalTextDirectionSettings.Direction =
+            sender.selectedSegment == TextDirectionSegment.rtl.rawValue ? .rtl : .ltr
+        TerminalTextDirectionSettings.setDirection(target)
+    }
+
+    private func updateTextDirectionSelection() {
+        let direction = TerminalTextDirectionSettings.direction()
+        let segment = direction == .rtl ? TextDirectionSegment.rtl.rawValue : TextDirectionSegment.ltr.rawValue
+        for control in textDirectionControls.values where control.selectedSegment != segment {
             control.selectedSegment = segment
         }
     }
