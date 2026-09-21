@@ -110,7 +110,9 @@ extension KeyboardShortcutSettings.Action {
              .canvasDistributeVertically,
              .toggleRightSidebar,
              .findInDirectory,
-             .openDiffViewer:
+             .openDiffViewer,
+             // Ivrix: flips a global UserDefaults setting, not a surface tree.
+             .toggleTextDirection:
             .mainContainer
         }
     }

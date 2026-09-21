@@ -1237,6 +1237,7 @@ struct TitlebarControlsView: View {
                 iconLabel(
                     systemName: textDirection == .rtl ? "text.alignright" : "text.alignleft",
                     config: config,
+                    foregroundColor: foregroundColor,
                     iconGeometryKeyPrefix: "titlebarControl_textDirectionIcon"
                 )
             }
