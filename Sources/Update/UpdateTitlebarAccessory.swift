@@ -630,9 +630,7 @@ enum TitlebarControlsLayoutMetrics {
     static func buttonRowWidth(config: TitlebarControlsStyleConfig) -> CGFloat {
         let ranges = TitlebarControlsHitRegions.buttonXRanges(config: config)
         guard let first = ranges.first, let last = ranges.last else { return 0 }
-        // The extra button + gap reserves room for the Ivrix RTL/LTR direction
-        // toggle, which sits in the row but has no hit-region or hint slot.
-        return (last.upperBound - first.lowerBound) + config.buttonSize + config.spacing
+        return last.upperBound - first.lowerBound
     }
 
     static func buttonCenterX(
@@ -1222,31 +1220,6 @@ struct TitlebarControlsView: View {
                 iconLabel(systemName: "arrow.right", config: config, foregroundColor: foregroundColor, iconGeometryKeyPrefix: "titlebarControl_focusHistoryForwardIcon")
             }
             .safeHelp(KeyboardShortcutSettings.Action.focusHistoryForward.tooltip(String(localized: "menu.history.focusForward", defaultValue: "Focus Forward")))
-
-            TitlebarControlButton(
-                config: config,
-                foregroundColor: foregroundColor,
-                accessibilityIdentifier: "titlebarControl.textDirection",
-                accessibilityLabel: String(localized: "toolbar.textDirection.tooltip", defaultValue: "Text Direction (RTL/LTR)"),
-                action: {
-                #if DEBUG
-                cmuxDebugLog("titlebar.textDirection")
-                #endif
-                TerminalTextDirectionSettings.toggleDirection()
-            }) {
-                iconLabel(
-                    systemName: textDirection == .rtl ? "text.alignright" : "text.alignleft",
-                    config: config,
-                    foregroundColor: foregroundColor,
-                    iconGeometryKeyPrefix: "titlebarControl_textDirectionIcon"
-                )
-            }
-            .safeHelp(KeyboardShortcutSettings.Action.toggleTextDirection.tooltip(
-                textDirection == .rtl
-                    ? String(localized: "toolbar.textDirection.rtl", defaultValue: "Right-to-left")
-                    : String(localized: "toolbar.textDirection.ltr", defaultValue: "Left-to-right")
-            ))
-
         }
 
         let paddedContent = content.padding(config.groupPadding)
@@ -2778,6 +2751,7 @@ final class UpdateTitlebarAccessoryController {
     private var pendingAttachRetries: [ObjectIdentifier: Int] = [:]
     private var startupScanWorkItems: [DispatchWorkItem] = []
     private let controlsIdentifier = NSUserInterfaceItemIdentifier("cmux.titlebarControls")
+    private let directionIdentifier = NSUserInterfaceItemIdentifier("ivrix.titlebarDirection")
     private let controlsControllers = NSHashTable<TitlebarControlsAccessoryViewController>.weakObjects()
     private var lastKnownPresentationMode: WorkspacePresentationModeSettings.Mode = WorkspacePresentationModeSettings.mode()
     private var detachedNotificationsPopover: NSPopover?
@@ -2989,6 +2963,13 @@ final class UpdateTitlebarAccessoryController {
             controlsControllers.add(controls)
         }
 
+        // Ivrix: the direction toggle is its own trailing-edge accessory.
+        if !window.titlebarAccessoryViewControllers.contains(where: { $0.view.identifier == directionIdentifier }) {
+            let direction = IvrixDirectionAccessoryViewController(layoutModel: layoutModel)
+            direction.view.identifier = directionIdentifier
+            window.addTitlebarAccessoryViewController(direction)
+        }
+
         attachedWindows.add(window)
         applyAccessoryVisibility(for: window)
 
@@ -3010,7 +2991,8 @@ final class UpdateTitlebarAccessoryController {
         let shouldHide = WorkspacePresentationModeSettings.mode() == .minimal
             || window.styleMask.contains(.fullScreen)
         for accessory in window.titlebarAccessoryViewControllers
-            where accessory.view.identifier == controlsIdentifier {
+            where accessory.view.identifier == controlsIdentifier
+            || accessory.view.identifier == directionIdentifier {
             accessory.isHidden = shouldHide
             accessory.view.isHidden = shouldHide
             accessory.view.alphaValue = shouldHide ? 0 : 1
@@ -3025,7 +3007,7 @@ final class UpdateTitlebarAccessoryController {
         }
         let matchingIndices = window.titlebarAccessoryViewControllers.indices.reversed().filter { index in
             let id = window.titlebarAccessoryViewControllers[index].view.identifier
-            return id == controlsIdentifier
+            return id == controlsIdentifier || id == directionIdentifier
         }
         guard !matchingIndices.isEmpty || attachedWindows.contains(window) else { return }
 
@@ -3210,5 +3192,161 @@ final class UpdateTitlebarAccessoryController {
             return
         }
         target.toggleNotificationsPopover(animated: animated)
+    }
+}
+
+// MARK: - Ivrix: trailing-edge text-direction toggle
+
+/// Ivrix pins the RTL/LTR toggle to the trailing edge of the titlebar, in its
+/// own `.right` accessory, rather than appending it to the leading controls row.
+///
+/// Upstream keeps adding buttons to that row, so on every sync the toggle drifted
+/// further toward the middle of the window and eventually got clipped (it also
+/// forced a width-reservation hack in `buttonRowWidth`, since it had no hit-region
+/// or hint slot of its own). A separate trailing accessory keeps it at one fixed,
+/// predictable spot and stops it competing for leading-edge space.
+private struct IvrixTitlebarDirectionToggle: View {
+    let layoutModel: TitlebarControlsLayoutModel
+    @State private var textDirection: TerminalTextDirectionSettings.Direction =
+        TerminalTextDirectionSettings.direction()
+    @State private var appearanceRefreshTick: UInt8 = 0
+
+    var body: some View {
+        // Re-read the tick so an appearance change re-evaluates the tint.
+        let _ = appearanceRefreshTick
+        let snapshot = layoutModel.snapshot
+        let config = snapshot.style.config
+        let foregroundColor = Color(nsColor: titlebarControlForegroundNSColor(opacity: 1.0))
+        let iconFrame = TitlebarControlIconStyle.iconFrameSize(for: config)
+
+        TitlebarControlButton(
+            config: config,
+            foregroundColor: foregroundColor,
+            accessibilityIdentifier: "titlebarControl.textDirection",
+            accessibilityLabel: String(
+                localized: "toolbar.textDirection.tooltip",
+                defaultValue: "Text Direction (RTL/LTR)"
+            ),
+            action: {
+                #if DEBUG
+                cmuxDebugLog("titlebar.textDirection")
+                #endif
+                TerminalTextDirectionSettings.toggleDirection()
+            }
+        ) {
+            TitlebarControlSymbol(
+                systemName: textDirection == .rtl ? "text.alignright" : "text.alignleft",
+                config: config,
+                foregroundColor: foregroundColor
+            )
+            .frame(width: iconFrame, height: iconFrame)
+            // The symbol is backed by an NSImageView, which wins AppKit hit
+            // testing inside a titlebar accessory and swallows the mouse-down
+            // before SwiftUI's Button ever sees it. The icon is decoration; the
+            // button's own contentShape owns the hit area.
+            .allowsHitTesting(false)
+        }
+        .safeHelp(KeyboardShortcutSettings.Action.toggleTextDirection.tooltip(
+            textDirection == .rtl
+                ? String(localized: "toolbar.textDirection.rtl", defaultValue: "Right-to-left")
+                : String(localized: "toolbar.textDirection.ltr", defaultValue: "Left-to-right")
+        ))
+        // Take the same content height as the leading controls row and centre the
+        // button in it. AppKit positions both accessories against the same
+        // titlebar box, so matching the height is what keeps them on one baseline
+        // instead of the button sinking to the bottom edge.
+        .frame(height: snapshot.contentSize.height, alignment: .center)
+        .padding(.trailing, IvrixDirectionAccessoryMetrics.trailingInset)
+        .fixedSize()
+        .onReceive(NotificationCenter.default.publisher(
+            for: TerminalTextDirectionSettings.didChangeNotification
+        )) { _ in
+            textDirection = TerminalTextDirectionSettings.direction()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .ghosttyDefaultBackgroundDidChange)) { _ in
+            appearanceRefreshTick &+= 1
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .ghosttyChromeConfigurationDidChange)) { _ in
+            appearanceRefreshTick &+= 1
+        }
+    }
+}
+
+enum IvrixDirectionAccessoryMetrics {
+    /// Keeps the toggle off the window's rounded trailing corner.
+    static let trailingInset: CGFloat = 8
+}
+
+/// Hosts `IvrixTitlebarDirectionToggle` as a right-aligned titlebar accessory.
+///
+/// Mirrors the leading controls accessory's view structure on purpose: the
+/// hosting view's `hitTest` only resolves a left-mouse-down when the point is
+/// inside a region registered by `titlebarInteractiveControl()`, and it is the
+/// surrounding `TitlebarAccessoryContainerView` that keeps that path working for
+/// titlebar-hosted controls. Using the hosting view directly as the accessory's
+/// view swallows the click instead.
+@MainActor
+final class IvrixDirectionAccessoryViewController: NSTitlebarAccessoryViewController {
+    private let hostingView: NonDraggableHostingView<AnyView>
+    private let containerView = TitlebarAccessoryContainerView()
+
+    init(layoutModel: TitlebarControlsLayoutModel) {
+        hostingView = NonDraggableHostingView(
+            rootView: AnyView(IvrixTitlebarDirectionToggle(layoutModel: layoutModel))
+        )
+        super.init(nibName: nil, bundle: nil)
+
+        layoutAttribute = .right
+
+        containerView.translatesAutoresizingMaskIntoConstraints = true
+        containerView.wantsLayer = true
+        // The button background can overflow the titlebar-height content frame,
+        // same as the leading controls row; don't re-clip it.
+        containerView.clipsToBounds = false
+        containerView.layer?.masksToBounds = false
+
+        hostingView.translatesAutoresizingMaskIntoConstraints = true
+        hostingView.autoresizingMask = []
+        hostingView.clipsToBounds = false
+        hostingView.layer?.masksToBounds = false
+        containerView.addSubview(hostingView)
+
+        view = containerView
+        layoutContent()
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("IvrixDirectionAccessoryViewController does not support NSCoder")
+    }
+
+    override func viewDidLayout() {
+        super.viewDidLayout()
+        layoutContent()
+    }
+
+    /// SwiftUI reports a zero fitting size until the subtree has laid out once,
+    /// which would collapse the accessory to nothing, so force layout first.
+    private func layoutContent() {
+        hostingView.layoutSubtreeIfNeeded()
+        let fitting = hostingView.fittingSize
+        guard fitting.width > 0, fitting.height > 0 else { return }
+
+        // AppKit hands the accessory a full-height titlebar slot (32pt) but sizes
+        // our view from its own frame, so a button-height view lands on the slot's
+        // bottom edge and reads as misaligned against the leading controls row.
+        // Take the slot's height and centre the button inside it instead.
+        let slotHeight = view.superview?.bounds.height ?? fitting.height
+        let targetSize = NSSize(width: fitting.width, height: max(fitting.height, slotHeight))
+        if containerView.frame.size != targetSize {
+            containerView.frame = NSRect(origin: containerView.frame.origin, size: targetSize)
+            preferredContentSize = targetSize
+        }
+
+        let centeredY = ((containerView.bounds.height - fitting.height) / 2).rounded()
+        let target = NSRect(x: 0, y: centeredY, width: fitting.width, height: fitting.height)
+        if hostingView.frame != target {
+            hostingView.frame = target
+        }
     }
 }
