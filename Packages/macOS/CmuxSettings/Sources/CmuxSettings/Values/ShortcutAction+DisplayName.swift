@@ -104,6 +104,8 @@ extension ShortcutAction {
             return String(localized: "shortcut.sendCtrlFToTerminal.label", defaultValue: "Send Ctrl-F to Terminal")
         case .clearScreenKeepScrollback:
             return String(localized: "shortcut.clearScreenKeepScrollback.label", defaultValue: "Clear Screen (Keep Scrollback)")
+        case .toggleTextDirection:
+            return String(localized: "shortcut.toggleTextDirection.label", defaultValue: "Toggle Text Direction (LTR/RTL)")
         case .focusLeft: return "Focus Pane Left"
         case .focusRight: return "Focus Pane Right"
         case .focusUp: return "Focus Pane Up"

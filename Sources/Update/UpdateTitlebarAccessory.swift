@@ -630,7 +630,9 @@ enum TitlebarControlsLayoutMetrics {
     static func buttonRowWidth(config: TitlebarControlsStyleConfig) -> CGFloat {
         let ranges = TitlebarControlsHitRegions.buttonXRanges(config: config)
         guard let first = ranges.first, let last = ranges.last else { return 0 }
-        return last.upperBound - first.lowerBound
+        // The extra button + gap reserves room for the Ivrix RTL/LTR direction
+        // toggle, which sits in the row but has no hit-region or hint slot.
+        return (last.upperBound - first.lowerBound) + config.buttonSize + config.spacing
     }
 
     static func buttonCenterX(
@@ -1019,6 +1021,7 @@ struct TitlebarControlsView: View {
     @State private var isHoveringControls = false
     @State private var hostWindowNumber: Int?
     @State private var focusHistoryAvailabilityRevision: UInt64 = 0
+    @State private var textDirection: TerminalTextDirectionSettings.Direction = TerminalTextDirectionSettings.direction()
     @State private var modifierKeyMonitor = WindowScopedShortcutHintModifierMonitor(activation: .commandOnly)
     private let titlebarShortcutHintXOffset = ShortcutHintDebugSettings.defaultTitlebarHintX
     private let titlebarShortcutHintYOffset = ShortcutHintDebugSettings.defaultTitlebarHintY
@@ -1104,6 +1107,9 @@ struct TitlebarControlsView: View {
             }
             .onReceive(NotificationCenter.default.publisher(for: .ghosttyChromeConfigurationDidChange)) { _ in
                 appearanceRefreshTick &+= 1
+            }
+            .onReceive(NotificationCenter.default.publisher(for: TerminalTextDirectionSettings.didChangeNotification)) { _ in
+                textDirection = TerminalTextDirectionSettings.direction()
             }
             .onAppear {
                 startShortcutHintMonitorIfNeeded()
@@ -1216,6 +1222,29 @@ struct TitlebarControlsView: View {
                 iconLabel(systemName: "arrow.right", config: config, foregroundColor: foregroundColor, iconGeometryKeyPrefix: "titlebarControl_focusHistoryForwardIcon")
             }
             .safeHelp(KeyboardShortcutSettings.Action.focusHistoryForward.tooltip(String(localized: "menu.history.focusForward", defaultValue: "Focus Forward")))
+
+            TitlebarControlButton(
+                config: config,
+                foregroundColor: foregroundColor,
+                accessibilityIdentifier: "titlebarControl.textDirection",
+                accessibilityLabel: String(localized: "toolbar.textDirection.tooltip", defaultValue: "Text Direction (RTL/LTR)"),
+                action: {
+                #if DEBUG
+                cmuxDebugLog("titlebar.textDirection")
+                #endif
+                TerminalTextDirectionSettings.toggleDirection()
+            }) {
+                iconLabel(
+                    systemName: textDirection == .rtl ? "text.alignright" : "text.alignleft",
+                    config: config,
+                    iconGeometryKeyPrefix: "titlebarControl_textDirectionIcon"
+                )
+            }
+            .safeHelp(KeyboardShortcutSettings.Action.toggleTextDirection.tooltip(
+                textDirection == .rtl
+                    ? String(localized: "toolbar.textDirection.rtl", defaultValue: "Right-to-left")
+                    : String(localized: "toolbar.textDirection.ltr", defaultValue: "Left-to-right")
+            ))
 
         }
 

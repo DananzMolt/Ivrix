@@ -37,6 +37,20 @@ public struct TerminalCatalogSection: SettingCatalogSection {
         userDefaultsKey: "terminal.showScrollBar"
     )
 
+    /// Hebrew fallback face for the terminal.
+    public let hebrewFont = DefaultsKey<HebrewFontFace>(
+        id: HebrewFontFace.settingsPath,
+        defaultValue: HebrewFontFace.defaultFace,
+        userDefaultsKey: HebrewFontFace.settingsPath
+    )
+
+    /// Rewrite Hebrew geresh/gershayim to ASCII `'`/`"` while typing.
+    public let hebrewAsciiQuotes = DefaultsKey<Bool>(
+        id: "terminal.hebrewAsciiQuotes",
+        defaultValue: true,
+        userDefaultsKey: "terminal.hebrewAsciiQuotes"
+    )
+
     public let copyOnSelect = DefaultsKey<Bool>(
         id: "terminal.copyOnSelect",
         defaultValue: false,

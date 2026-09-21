@@ -66,6 +66,7 @@ Values for `shortcuts.bindings.<action>`:
 - `shortcuts.bindings.simulatorRotateRight`
 - `shortcuts.bindings.simulatorToggleAppearance`
 - `shortcuts.bindings.simulatorToggleSoftwareKeyboard`
+- `shortcuts.bindings.toggleTextDirection`
 - `shortcuts.bindings.focusLeft`
 - `shortcuts.bindings.focusRight`
 - `shortcuts.bindings.focusUp`

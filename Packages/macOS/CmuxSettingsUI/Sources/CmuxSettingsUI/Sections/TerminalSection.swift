@@ -24,6 +24,8 @@ public struct TerminalSection: View {
     @State private var scrollBar: DefaultsValueModel<Bool>
     @State private var copyOnSelect: DefaultsValueModel<Bool>
     @State private var adaptiveDefaultTheme: DefaultsValueModel<Bool>
+    @State private var hebrewFont: DefaultsValueModel<HebrewFontFace>
+    @State private var hebrewAsciiQuotes: DefaultsValueModel<Bool>
     @State private var autoResume: DefaultsValueModel<Bool>
     @State private var hibernation: DefaultsValueModel<Bool>
     @State private var idleSeconds: DefaultsValueModel<Double>
@@ -56,6 +58,8 @@ public struct TerminalSection: View {
                 key: catalog.terminal.adaptiveDefaultTheme
             )
         )
+        _hebrewFont = State(initialValue: DefaultsValueModel(store: defaultsStore, key: catalog.terminal.hebrewFont))
+        _hebrewAsciiQuotes = State(initialValue: DefaultsValueModel(store: defaultsStore, key: catalog.terminal.hebrewAsciiQuotes))
         _autoResume = State(initialValue: DefaultsValueModel(store: defaultsStore, key: catalog.terminal.autoResumeAgentSessions))
         _hibernation = State(initialValue: DefaultsValueModel(store: defaultsStore, key: catalog.terminal.agentHibernationEnabled))
         _idleSeconds = State(initialValue: DefaultsValueModel(store: defaultsStore, key: catalog.terminal.agentHibernationIdleSeconds))
@@ -85,6 +89,8 @@ public struct TerminalSection: View {
             scrollBar,
             copyOnSelect,
             adaptiveDefaultTheme,
+            hebrewFont,
+            hebrewAsciiQuotes,
             autoResume,
             hibernation,
             idleSeconds,
@@ -364,6 +370,51 @@ public struct TerminalSection: View {
                 .frame(width: 210)
                 .disabled(!sessionContentWidthEnabled)
                 .accessibilityIdentifier("SettingsSessionContentAlignmentPicker")
+            }
+            SettingsCardDivider()
+            SettingsCardRow(
+                configurationReview: .json(HebrewFontFace.settingsPath),
+                String(localized: "settings.terminal.hebrewFont", defaultValue: "Hebrew Font"),
+                subtitle: String(
+                    localized: "settings.terminal.hebrewFont.subtitle",
+                    defaultValue: "Face used for Hebrew text. Every option is normalised to the Latin cell width, so this changes letterforms only."
+                ),
+                controlWidth: 250
+            ) {
+                Picker(
+                    "",
+                    selection: Binding(
+                        get: { hebrewFont.current },
+                        set: { hebrewFont.set($0) }
+                    )
+                ) {
+                    ForEach(HebrewFontFace.allCases, id: \.self) { face in
+                        Text(face.displayName).tag(face)
+                    }
+                }
+                .labelsHidden()
+                .pickerStyle(.menu)
+                .frame(width: 210)
+                .accessibilityIdentifier("SettingsHebrewFontPicker")
+            }
+            SettingsCardDivider()
+            SettingsCardRow(
+                configurationReview: .json("terminal.hebrewAsciiQuotes"),
+                String(localized: "settings.terminal.hebrewAsciiQuotes", defaultValue: "ASCII Quotes on Hebrew Layout"),
+                subtitle: hebrewAsciiQuotes.current
+                    ? String(
+                        localized: "settings.terminal.hebrewAsciiQuotes.subtitleOn",
+                        defaultValue: "Typing geresh or gershayim (׳ ״) on a Hebrew layout sends ASCII ' and \" instead, so shell quoting works."
+                    )
+                    : String(
+                        localized: "settings.terminal.hebrewAsciiQuotes.subtitleOff",
+                        defaultValue: "Hebrew punctuation is sent as typed. Needed for acronyms such as צה״ל; shell quoting will not work from a Hebrew layout."
+                    )
+            ) {
+                Toggle("", isOn: Binding(get: { hebrewAsciiQuotes.current }, set: { hebrewAsciiQuotes.set($0) }))
+                    .labelsHidden()
+                    .controlSize(.small)
+                    .accessibilityIdentifier("SettingsTerminalHebrewAsciiQuotesToggle")
             }
             SettingsCardDivider()
             SettingsCardRow(

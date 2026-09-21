@@ -153,6 +153,8 @@ enum KeyboardShortcutSettings {
         case focusTextBoxInput, cycleTextBoxSubmitAction, attachTextBoxFile
         case sendCtrlFToTerminal
         case clearScreenKeepScrollback
+        case toggleTextDirection
+
         // Panes / splits
         case focusLeft
         case focusRight
@@ -244,7 +246,7 @@ enum KeyboardShortcutSettings {
             case .newWindow: return String(localized: "shortcut.newWindow.label", defaultValue: "New Window")
             case .closeWindow: return String(localized: "shortcut.closeWindow.label", defaultValue: "Close Window")
             case .toggleFullScreen: return String(localized: "command.toggleFullScreen.title", defaultValue: "Toggle Full Screen")
-            case .quit: return String(localized: "menu.quitCmux", defaultValue: "Quit cmux")
+            case .quit: return String(localized: "menu.quitCmux", defaultValue: "Quit Ivrix")
             case .toggleSidebar: return String(localized: "shortcut.toggleLeftSidebar.label", defaultValue: "Toggle Left Sidebar")
             case .newTab: return String(localized: "shortcut.newWorkspace.label", defaultValue: "New Workspace")
             case .newBrowserWorkspace: return String(localized: "shortcut.newBrowserWorkspace.label", defaultValue: "New Browser Workspace")
@@ -316,6 +318,7 @@ enum KeyboardShortcutSettings {
             case .attachTextBoxFile: return String(localized: "shortcut.attachTextBoxFile.label", defaultValue: "Attach File to TextBox Input")
             case .sendCtrlFToTerminal: return String(localized: "shortcut.sendCtrlFToTerminal.label", defaultValue: "Send Ctrl-F to Terminal")
             case .clearScreenKeepScrollback: return String(localized: "shortcut.clearScreenKeepScrollback.label", defaultValue: "Clear Screen (Keep Scrollback)")
+            case .toggleTextDirection: return String(localized: "shortcut.toggleTextDirection.label", defaultValue: "Toggle Text Direction (LTR/RTL)")
             case .focusLeft: return String(localized: "shortcut.focusPaneLeft.label", defaultValue: "Focus Pane Left")
             case .focusRight: return String(localized: "shortcut.focusPaneRight.label", defaultValue: "Focus Pane Right")
             case .focusUp: return String(localized: "shortcut.focusPaneUp.label", defaultValue: "Focus Pane Up")
@@ -635,6 +638,10 @@ enum KeyboardShortcutSettings {
                 // which also wipes scrollback. Shift+K is unbound in both Ghostty defaults and
                 // cmux, and sits next to the full-clear chord. Rebindable in Settings → Keyboard Shortcuts.
                 return StoredShortcut(key: "k", command: true, shift: true, option: false, control: false)
+            case .toggleTextDirection:
+                // Ctrl+Cmd+H: "H" for Hebrew, and Cmd+H alone is Hide Application, so the
+                // Ctrl variant stays free of both AppKit reservations and cmux defaults.
+                return StoredShortcut(key: "h", command: true, shift: false, option: false, control: true)
             case .selectWorkspaceByNumber:
                 return StoredShortcut(key: "1", command: true, shift: false, option: false, control: false)
             case .moveWorkspaceUp: return StoredShortcut(key: "[", command: true, shift: false, option: true, control: true)

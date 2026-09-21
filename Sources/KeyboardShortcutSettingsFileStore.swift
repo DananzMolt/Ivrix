@@ -1564,6 +1564,10 @@ final class CmuxSettingsFileStore {
                     adaptiveDefaultThemeDidChange = true
                 }
 
+                if change.defaultsKey == TerminalHebrewFontSettings.fontKey {
+                    TerminalHebrewFontSettings.notifyDidChange(notificationCenter: notificationCenter)
+                }
+
                 if change.defaultsKey == AgentSessionAutoResumeSettings.autoResumeAgentSessionsKey {
                     agentSessionAutoResumeDidChange = true
                 }

@@ -43,6 +43,7 @@ Terminal presentation settings from Settings > Terminal.
 | Key | Type | Default | Description |
 |---|---|---|---|
 | `terminal.showScrollBar` | boolean | `true` | Show the right-edge terminal scroll bar when scrollback is available. cmux automatically suppresses it for alternate-screen style TUI surfaces. |
+| `terminal.hebrewAsciiQuotes` | boolean | `true` | Rewrite HEBREW PUNCTUATION GERESH (U+05F3) and GERSHAYIM (U+05F4) typed on a Hebrew keyboard layout to ASCII `'` and `"` so shell quoting works. Set false to send Hebrew punctuation as typed, which is required for acronyms such as צה״ל. |
 | `terminal.autoResumeAgentSessions` | boolean | `true` | Automatically run agent resume commands for restored terminal sessions when cmux reopens after quit. Set false to restore panes while keeping Claude Code, Codex, OpenCode, and other saved agent sessions idle until you resume them manually. |
 | `terminal.adaptiveDefaultTheme` | boolean | `true` | When true (the default), cmux supplies an appearance-adaptive default palette unless a Ghostty theme or terminal colors are configured. Font and other settings are preserved. When false, Ghostty uses its fixed built-in palette. Explicit themes and colors always take precedence, including theme = light:X,dark:Y. |
 | `terminal.scrollSpeed` | number | `1.0` | Multiplier applied to terminal scroll wheel and trackpad deltas. Higher values scroll faster; lower values scroll slower. |

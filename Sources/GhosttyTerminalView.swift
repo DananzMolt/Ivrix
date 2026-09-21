@@ -609,6 +609,9 @@ class GhosttyApp {
     )
     private var appObservers: [NSObjectProtocol] = []
     @MainActor private lazy var terminalBellService = TerminalBellService()
+    /// Hebrew face this surface last configured, so a defaults change that
+    /// leaves it alone does not trigger a needless font-grid rebuild.
+    private var appliedHebrewFont: TerminalHebrewFontSettings.Face = TerminalHebrewFontSettings.defaultFace
     private var backgroundEventCounter: UInt64 = 0
     private var defaultBackgroundUpdateScope: GhosttyDefaultBackgroundUpdateScope = .unscoped
     private var defaultBackgroundScopeSource: String = "initialize"
@@ -1088,6 +1091,40 @@ class GhosttyApp {
             }
         })
 
+        appObservers.append(NotificationCenter.default.addObserver(
+            forName: TerminalTextDirectionSettings.didChangeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.reloadConfiguration(source: "settings.terminal.textDirection")
+        })
+
+        appObservers.append(NotificationCenter.default.addObserver(
+            forName: TerminalHebrewFontSettings.didChangeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.reloadConfiguration(source: "settings.terminal.hebrewFont")
+        })
+
+        // The settings window writes UserDefaults through its own store rather
+        // than the managed-defaults path that posts the notification above, so
+        // watch the defaults directly too. didChangeNotification fires for any
+        // key, hence the comparison against the face already applied - without
+        // it every unrelated settings write would rebuild the font grid.
+        appliedHebrewFont = TerminalHebrewFontSettings.face()
+        appObservers.append(NotificationCenter.default.addObserver(
+            forName: UserDefaults.didChangeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            guard let self else { return }
+            let face = TerminalHebrewFontSettings.face()
+            guard face != self.appliedHebrewFont else { return }
+            self.appliedHebrewFont = face
+            self.reloadConfiguration(source: "settings.terminal.hebrewFont")
+        })
+
         #endif
     }
 
@@ -1238,6 +1275,43 @@ class GhosttyApp {
         loadRealUserGhosttyConfig(config, preferredColorScheme: preferredColorScheme, themeColorScheme: themeColorScheme)
         #endif
         loadCJKFontFallbackIfNeeded(config)
+        // Ivrix Hebrew/BIDI defaults: bidi rendering on, bundled Latin mono +
+        // Hebrew fallback, slight thickening for readability, and the current
+        // print direction (ltr/rtl, toggled from the toolbar).
+        //
+        // Ivrix Mono He is the Hebrew fallback: Secular One subset to Hebrew
+        // and set to a uniform 0.600em advance. Built by
+        // scripts/make-hebrew-font.py, which scales each weight by whichever
+        // limit binds first - the target letter height, or the maximum ink
+        // width that keeps the widest letter inside the cell.
+        //
+        // Secular One is a single-weight display face, so only Regular ships
+        // and ghostty synthesises bold and italic from it. Shipping a "Bold"
+        // with the same outlines would suppress that synthesis and leave no
+        // visual bold at all.
+        //
+        // The terminal gives every Hebrew letter one cell, so a proportional
+        // face gaps badly: advances vary 18-25% across the alphabet in every
+        // Hebrew face measured, and a narrow letter such as yod can advance
+        // 0.213em inside a 0.600em cell, leaving a third of it empty. Uniform
+        // advances are a requirement here, not a preference.
+        //
+        // Miriam Mono CLM was uniform but drew Hebrew at 0.482em, under Maple
+        // Mono's 0.550em Latin x-height, so it read smaller than the
+        // surrounding lowercase. Normalising a proportional face gives both:
+        // an even rhythm and a letter height that matches the Latin.
+        loadInlineGhosttyConfig(
+            """
+            bidi = true
+            font-family = Maple Mono NF
+            \(TerminalHebrewFontSettings.ghosttyConfigContents())
+            font-thicken = true
+            \(TerminalTextDirectionSettings.ghosttyConfigContents())
+            """,
+            into: config,
+            prefix: "cmux-hebrew-bidi",
+            logLabel: "hebrew bidi defaults"
+        )
         let renderingModeChanged = setUsesHostLayerBackground(
             true,
             source: "loadDefaultConfigFilesWithLegacyFallback"
@@ -1334,6 +1408,22 @@ class GhosttyApp {
             into: config,
             prefix: "cmux-owned-keybind-overrides",
             logLabel: "cmux-owned keybind overrides"
+        )
+
+        // Cmd+Z undoes the last edit on the line being typed, by sending
+        // readline's undo (Ctrl+_, 0x1f). Shells and readline-style TUIs act
+        // on it; anything that ignores 0x1f does nothing, which is the same as
+        // the unbound behaviour it replaces.
+        //
+        // This undoes an *edit*, not a command: nothing can un-run something
+        // already submitted, and it does not touch terminal output.
+        loadInlineGhosttyConfig(
+            """
+            keybind = super+z=text:\\x1f
+            """,
+            into: config,
+            prefix: "cmux-undo-keybind",
+            logLabel: "cmux undo keybind"
         )
     }
 
@@ -7435,7 +7525,10 @@ class GhosttyNSView: NSView, NSUserInterfaceValidations {
             }
         }
 
-        return chars
+        // Ivrix: the fallback text path, used when `interpretKeyEvents` produced
+        // no `insertText`. Same rewrite as the accumulator path so a Hebrew
+        // layout's quote keys reach the shell as ASCII quotes either way.
+        return HebrewAsciiQuotes.normalized(chars)
     }
 
     /// Get the unshifted codepoint for the key event
@@ -13631,6 +13724,13 @@ extension GhosttyNSView: NSTextInputClient {
             chars = v
         default:
             return
+        }
+
+        // Ivrix: only rewrite Hebrew quote punctuation for live keystrokes. The
+        // accumulator is non-nil exactly inside `keyDown`, so paste, dictation,
+        // and programmatic `NSTextInputClient` callers keep their text verbatim.
+        if keyTextAccumulator != nil {
+            chars = HebrewAsciiQuotes.normalized(chars)
         }
 
         if keyTextAccumulator != nil,

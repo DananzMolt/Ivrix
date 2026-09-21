@@ -93,4 +93,16 @@ import Testing
             == "https://example.com/stable/appcast.xml")
         #expect(resolver.resolve(infoFeedURL: nil).url == resolver.fallbackFeedURL)
     }
+
+    @Test func defaultFallbackPointsAtIvrixNotUpstream() {
+        // An Ivrix build that falls back to upstream's appcast is offered
+        // upstream's releases, and installing one replaces Ivrix with cmux.
+        // The default therefore has to be this fork's own feed.
+        let resolver = UpdateFeedResolver()
+        let resolution = resolver.resolve(infoFeedURL: nil)
+        #expect(resolution.usedFallback)
+        #expect(resolution.url == UpdateFeedResolver.ivrixFallbackFeedURL)
+        #expect(resolution.url.contains("DananzMolt/Ivrix"))
+        #expect(!resolution.url.contains("manaflow-ai/cmux"))
+    }
 }

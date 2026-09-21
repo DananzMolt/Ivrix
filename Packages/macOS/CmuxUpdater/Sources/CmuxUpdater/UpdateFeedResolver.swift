@@ -73,15 +73,25 @@ public struct UpdateFeedResolver: Sendable {
     /// The architecture nightly and RC feeds are resolved for.
     public let hostArchitecture: UpdateHostArchitecture
 
+    /// The appcast this fork updates from.
+    ///
+    /// This has to be Ivrix's own feed, not the upstream project's. An Ivrix
+    /// build that queries upstream is offered upstream's releases, and because
+    /// the two are different applications, installing one replaces Ivrix with
+    /// cmux and loses the Hebrew build entirely. A wrong value here is worse
+    /// than no updater at all, so it must never silently fall back upstream.
+    public static let ivrixFallbackFeedURL =
+        "https://github.com/DananzMolt/Ivrix/releases/latest/download/appcast.xml"
+
     /// Creates a resolver.
     ///
     /// - Parameters:
     ///   - fallbackFeedURL: The appcast URL to fall back to when the build-time feed URL is
-    ///     absent. Defaults to the project's latest-release appcast.
+    ///     absent. Defaults to Ivrix's own latest-release appcast, never upstream cmux's.
     ///   - hostArchitecture: The architecture to select nightly and RC feeds for. Defaults to the
     ///     machine's native architecture.
     public init(
-        fallbackFeedURL: String = "https://github.com/manaflow-ai/cmux/releases/latest/download/appcast.xml",
+        fallbackFeedURL: String = UpdateFeedResolver.ivrixFallbackFeedURL,
         hostArchitecture: UpdateHostArchitecture = .current
     ) {
         self.fallbackFeedURL = fallbackFeedURL

@@ -112,6 +112,9 @@ public enum ShortcutAction: String, CaseIterable, Sendable, Hashable, SettingCod
     case sendCtrlFToTerminal
     /// Clears the focused terminal's visible screen while preserving scrollback.
     case clearScreenKeepScrollback
+    /// Ivrix: flips the terminal print direction between LTR and RTL, the same
+    /// state the titlebar direction control writes.
+    case toggleTextDirection
 
     // MARK: Panes
     case focusLeft

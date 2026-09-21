@@ -339,6 +339,7 @@ export const shortcutCategories: ShortcutCategory[] = [
       { id: "simulatorRotateRight", combos: [["⌘", "→"]], description: { en: "Simulator: rotate right", ja: "Simulator: 右に回転" }, note: { en: "focused Simulator", ja: "フォーカス中のSimulator" } },
       { id: "simulatorToggleAppearance", combos: [["⌘", "⇧", "A"]], description: { en: "Simulator: toggle appearance", ja: "Simulator: 外観を切り替え" }, note: { en: "focused Simulator", ja: "フォーカス中のSimulator" } },
       { id: "simulatorToggleSoftwareKeyboard", combos: [["⌘", "K"]], description: { en: "Simulator: toggle software keyboard", ja: "Simulator: ソフトウェアキーボードを切り替え" }, note: { en: "focused Simulator", ja: "フォーカス中のSimulator" } },
+      { id: "toggleTextDirection", combos: [["⌃", "⌘", "H"]], description: { en: "Toggle terminal text direction (LTR/RTL)", ja: "ターミナルのテキスト方向を切り替え（LTR/RTL）" } },
       { id: "focusTextBoxInput", combos: [["⌘", "⇧", "A"]], description: { en: "Switch focus between terminal and TextBox input", ja: "ターミナルとTextBox入力のフォーカスを切り替え" } },
       { id: "cycleTextBoxSubmitAction", combos: [["⇧", "Tab"]], description: { en: "Cycle TextBox submit action", ja: "TextBoxの送信アクションを切り替え" } },
       { id: "attachTextBoxFile", combos: [["⌥", "⌘", "⇧", "A"]], description: { en: "Attach file to TextBox input", ja: "TextBox入力にファイルを添付" } },

@@ -1,3 +1,4 @@
+import CmuxSettings
 import Darwin
 import CmuxFoundation
 import CmuxTerminal
@@ -198,6 +199,100 @@ enum TerminalCopyOnSelectSettings {
             notifyDidChange(notificationCenter: notificationCenter)
         }
         return didChange
+    }
+
+    static func notifyDidChange(notificationCenter: NotificationCenter = .default) {
+        notificationCenter.post(name: didChangeNotification, object: nil)
+    }
+}
+
+/// Terminal print direction (Ivrix Hebrew/BIDI). Maps to Ghostty's
+/// `bidi-direction` config: `ltr` = left-anchored, `rtl` = right-anchored
+/// mirror. Toggled from the window toolbar; persisted app-wide and applied to
+/// live surfaces via a config reload (same pattern as copy-on-select).
+enum TerminalTextDirectionSettings {
+    static let directionKey = "terminal.textDirection"
+    static let didChangeNotification = Notification.Name("cmux.terminalTextDirectionSettingsDidChange")
+
+    enum Direction: String {
+        case ltr
+        case rtl
+    }
+
+    static let defaultDirection: Direction = .ltr
+
+    static func direction(defaults: UserDefaults = .standard) -> Direction {
+        Direction(rawValue: defaults.string(forKey: directionKey) ?? "") ?? defaultDirection
+    }
+
+    /// Ghostty config line for the current direction (always emitted so a reload
+    /// resets a surface that was previously flipped).
+    static func ghosttyConfigContents(defaults: UserDefaults = .standard) -> String {
+        "bidi-direction = \(direction(defaults: defaults).rawValue)"
+    }
+
+    static func setDirection(
+        _ direction: Direction,
+        defaults: UserDefaults = .standard,
+        notificationCenter: NotificationCenter = .default
+    ) {
+        let old = self.direction(defaults: defaults)
+        defaults.set(direction.rawValue, forKey: directionKey)
+        if old != direction {
+            notifyDidChange(notificationCenter: notificationCenter)
+        }
+    }
+
+    /// Flips the direction. The single mutation path shared by the titlebar
+    /// control, the toolbar segmented control, the View menu item, and the
+    /// `toggleTextDirection` keyboard shortcut.
+    @discardableResult
+    static func toggleDirection(
+        defaults: UserDefaults = .standard,
+        notificationCenter: NotificationCenter = .default
+    ) -> Direction {
+        let next: Direction = direction(defaults: defaults) == .rtl ? .ltr : .rtl
+        setDirection(next, defaults: defaults, notificationCenter: notificationCenter)
+        return next
+    }
+
+    static func notifyDidChange(notificationCenter: NotificationCenter = .default) {
+        notificationCenter.post(name: didChangeNotification, object: nil)
+    }
+}
+
+/// Hebrew fallback face (Ivrix). The face list lives in CmuxSettings so the
+/// settings window and the terminal agree on one definition; this wrapper adds
+/// the ghostty config line and the change notification that makes live
+/// surfaces reload.
+enum TerminalHebrewFontSettings {
+    typealias Face = HebrewFontFace
+
+    static let fontKey = HebrewFontFace.settingsPath
+    static let didChangeNotification = Notification.Name("cmux.terminalHebrewFontSettingsDidChange")
+
+    static let defaultFace: Face = .defaultFace
+
+    static func face(defaults: UserDefaults = .standard) -> Face {
+        Face(rawValue: defaults.string(forKey: fontKey) ?? "") ?? defaultFace
+    }
+
+    /// Ghostty config line naming the Hebrew fallback. Always emitted so a
+    /// reload switches a surface that was previously on another face.
+    static func ghosttyConfigContents(defaults: UserDefaults = .standard) -> String {
+        "font-family = \(face(defaults: defaults).familyName)"
+    }
+
+    static func setFace(
+        _ face: Face,
+        defaults: UserDefaults = .standard,
+        notificationCenter: NotificationCenter = .default
+    ) {
+        let old = self.face(defaults: defaults)
+        defaults.set(face.rawValue, forKey: fontKey)
+        if old != face {
+            notifyDidChange(notificationCenter: notificationCenter)
+        }
     }
 
     static func notifyDidChange(notificationCenter: NotificationCenter = .default) {

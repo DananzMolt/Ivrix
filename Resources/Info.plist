@@ -2,6 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>ATSApplicationFontsPath</key>
+	<string>Fonts</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
@@ -79,69 +81,69 @@
 	<key>NSMainStoryboardFile</key>
 	<string></string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>A program running within cmux would like to use your microphone.</string>
+	<string>A program running within Ivrix would like to use your microphone.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>A program running within cmux would like to use your camera.</string>
+	<string>A program running within Ivrix would like to use your camera.</string>
 	<key>NSCalendarsUsageDescription</key>
-	<string>A program running within cmux would like to access your calendars.</string>
+	<string>A program running within Ivrix would like to access your calendars.</string>
 	<key>NSRemindersUsageDescription</key>
-	<string>A program running within cmux would like to access your reminders.</string>
+	<string>A program running within Ivrix would like to access your reminders.</string>
 	<key>NSContactsUsageDescription</key>
-	<string>A program running within cmux would like to access your contacts.</string>
+	<string>A program running within Ivrix would like to access your contacts.</string>
 	<key>NSLocationUsageDescription</key>
-	<string>A program running within cmux would like to access your location.</string>
+	<string>A program running within Ivrix would like to access your location.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>A program running within cmux would like to access your photo library.</string>
+	<string>A program running within Ivrix would like to access your photo library.</string>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>A program running within cmux would like to access the local network.</string>
+	<string>A program running within Ivrix would like to access the local network.</string>
 	<key>NSAudioCaptureUsageDescription</key>
-	<string>A program running within cmux would like to access your system's audio.</string>
+	<string>A program running within Ivrix would like to access your system's audio.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>A program running within cmux would like to use speech recognition.</string>
+	<string>A program running within Ivrix would like to use speech recognition.</string>
 	<key>NSMotionUsageDescription</key>
-	<string>A program running within cmux would like to access motion data.</string>
+	<string>A program running within Ivrix would like to access motion data.</string>
 	<key>NSSystemAdministrationUsageDescription</key>
-	<string>A program running within cmux requires elevated privileges.</string>
+	<string>A program running within Ivrix requires elevated privileges.</string>
 	<key>NSSystemExtensionUsageDescription</key>
 	<string>cmux installs a network extension so this Mac can reach your Cloud machines on their private network. It runs only while you use cmux Cloud.</string>
 	<key>NSBluetoothAlwaysUsageDescription</key>
-	<string>A program running within cmux would like to use Bluetooth to discover passkeys and security keys.</string>
+	<string>A program running within Ivrix would like to use Bluetooth to discover passkeys and security keys.</string>
 	<key>NSAppleEventsUsageDescription</key>
-	<string>A program running within cmux would like to use AppleScript.</string>
+	<string>A program running within Ivrix would like to use AppleScript.</string>
 	<key>NSAutoFillRequiresTextContentTypeForOneTimeCodeOnMac</key>
 	<true/>
 	<key>NSAppBundlesUsageDescription</key>
-	<string>A program running within cmux would like to access the contents of other apps.</string>
+	<string>A program running within Ivrix would like to access the contents of other apps.</string>
 	<key>NSAppDataUsageDescription</key>
-	<string>A program running within cmux would like to access data from other apps.</string>
+	<string>A program running within Ivrix would like to access data from other apps.</string>
 	<key>NSDesktopFolderUsageDescription</key>
-	<string>A program running within cmux would like to access files in your Desktop folder.</string>
+	<string>A program running within Ivrix would like to access files in your Desktop folder.</string>
 	<key>NSDocumentsFolderUsageDescription</key>
-	<string>A program running within cmux would like to access files in your Documents folder.</string>
+	<string>A program running within Ivrix would like to access files in your Documents folder.</string>
 	<key>NSDownloadsFolderUsageDescription</key>
-	<string>A program running within cmux would like to access files in your Downloads folder.</string>
+	<string>A program running within Ivrix would like to access files in your Downloads folder.</string>
 	<key>NSFileProviderDomainUsageDescription</key>
-	<string>A program running within cmux would like to access files managed by a file provider.</string>
+	<string>A program running within Ivrix would like to access files managed by a file provider.</string>
 	<key>NSNetworkVolumesUsageDescription</key>
-	<string>A program running within cmux would like to access files on a network volume.</string>
+	<string>A program running within Ivrix would like to access files on a network volume.</string>
 	<key>NSRemovableVolumesUsageDescription</key>
-	<string>A program running within cmux would like to access files on a removable volume.</string>
+	<string>A program running within Ivrix would like to access files on a removable volume.</string>
 	<key>NSCalendarsFullAccessUsageDescription</key>
-	<string>A program running within cmux would like to read and write your calendars.</string>
+	<string>A program running within Ivrix would like to read and write your calendars.</string>
 	<key>NSCalendarsWriteOnlyAccessUsageDescription</key>
-	<string>A program running within cmux would like to add events to your calendars.</string>
+	<string>A program running within Ivrix would like to add events to your calendars.</string>
 	<key>NSRemindersFullAccessUsageDescription</key>
-	<string>A program running within cmux would like to read and write your reminders.</string>
+	<string>A program running within Ivrix would like to read and write your reminders.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>A program running within cmux would like to access your location.</string>
+	<string>A program running within Ivrix would like to access your location.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>A program running within cmux would like to use speech recognition.</string>
+	<string>A program running within Ivrix would like to use speech recognition.</string>
 	<key>NSSystemAdministrationUsageDescription</key>
-	<string>A program running within cmux would like to perform system administration tasks.</string>
+	<string>A program running within Ivrix would like to perform system administration tasks.</string>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>A program running within cmux would like to discover devices on your local network.</string>
+	<string>A program running within Ivrix would like to discover devices on your local network.</string>
 	<key>NSMotionUsageDescription</key>
-	<string>A program running within cmux would like to access motion data.</string>
+	<string>A program running within Ivrix would like to access motion data.</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -228,13 +230,13 @@
 		</dict>
 	</dict>
 	<key>NSAppleEventsUsageDescription</key>
-	<string>A program running within cmux would like to use AppleScript.</string>
+	<string>A program running within Ivrix would like to use AppleScript.</string>
 	<key>NSAppleScriptEnabled</key>
 	<true/>
 	<key>NSBluetoothAlwaysUsageDescription</key>
-	<string>A program running within cmux would like to use Bluetooth to discover passkeys and security keys.</string>
+	<string>A program running within Ivrix would like to use Bluetooth to discover passkeys and security keys.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>A program running within cmux would like to use your camera.</string>
+	<string>A program running within Ivrix would like to use your camera.</string>
 	<key>NSDockTilePlugIn</key>
 	<string>CmuxDockTilePlugin.plugin</string>
 	<key>NSHumanReadableCopyright</key>
@@ -242,7 +244,7 @@
 	<key>NSMainStoryboardFile</key>
 	<string></string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>A program running within cmux would like to use your microphone.</string>
+	<string>A program running within Ivrix would like to use your microphone.</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
 	<key>NSServices</key>
@@ -293,7 +295,7 @@
 	<key>SUEnableAutomaticChecks</key>
 	<true/>
 	<key>SUFeedURL</key>
-	<string>https://github.com/manaflow-ai/cmux/releases/latest/download/appcast.xml</string>
+	<string>https://github.com/DananzMolt/Ivrix/releases/latest/download/appcast.xml</string>
 	<key>SUPublicEDKey</key>
 	<string>$(SPARKLE_PUBLIC_KEY)</string>
 	<key>SUScheduledCheckInterval</key>
@@ -435,7 +437,7 @@
 	<key>SUEnableAutomaticChecks</key>
 	<true/>
 	<key>SUFeedURL</key>
-	<string>https://github.com/manaflow-ai/cmux/releases/latest/download/appcast.xml</string>
+	<string>https://github.com/DananzMolt/Ivrix/releases/latest/download/appcast.xml</string>
 	<key>SUScheduledCheckInterval</key>
 	<integer>86400</integer>
 	<key>SUSendProfileInfo</key>
