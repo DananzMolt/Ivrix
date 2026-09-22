@@ -1,6 +1,7 @@
 import Testing
 import AppKit
 import CmuxSidebar
+import CmuxNotifications
 import CmuxUpdater
 import SwiftUI
 
@@ -29,6 +30,7 @@ import SwiftUI
 @Suite(.serialized)
 final class SidebarLazyLayoutScaleTests {
     static let workspaceCount = 300
+    private static let groupedWorkspaceCount = 20
     /// Generous ceiling for "how many rows may be realized for one viewport".
     /// A 640pt window shows ~20 rows; LazyVStack prefetch and a second layout
     /// pass can multiply that, but a virtualization defeat realizes all 300.
@@ -85,7 +87,7 @@ final class SidebarLazyLayoutScaleTests {
     }
 
     @MainActor
-    static func mountSidebar(workspaceCount: Int) async throws -> Harness {
+    static func mountSidebar(workspaceCount: Int, includeGroups: Bool = true) async throws -> Harness {
         _ = NSApplication.shared
 
         // Hermetic defaults: VerticalTabsSidebar picks between the workspace
@@ -101,6 +103,13 @@ final class SidebarLazyLayoutScaleTests {
             CmuxExtensionSidebarSelection.defaultProviderId,
             forKey: CmuxExtensionSidebarSelection.defaultsKey
         )
+        // This suite measures SwiftUI lazy row bodies and pointer ownership.
+        // Keep that implementation explicit now that AppKit is the default.
+        let featureFlags = CmuxFeatureFlags(
+            defaults: defaults,
+            remoteFlagValueProvider: { _ in nil }
+        )
+        featureFlags.setOverride(false, for: CmuxFeatureFlags.appKitSidebarListFlag)
 
         let tabManager = TabManager()
         while tabManager.tabs.count < workspaceCount {
@@ -128,7 +137,7 @@ final class SidebarLazyLayoutScaleTests {
         // group-header rows — assembled by sidebarWorkspaceGroupRow(...) in
         // VerticalTabsSidebar+WorkspaceGroups.swift, a historical regression
         // site (#4385) — are exercised by the same realization bounds.
-        let groupCandidates = Array(tabManager.tabs.prefix(20).map(\.id))
+        let groupCandidates = includeGroups ? Array(tabManager.tabs.prefix(Self.groupedWorkspaceCount).map(\.id)) : []
         for chunkStart in stride(from: 0, to: groupCandidates.count, by: 4) {
             let children = Array(groupCandidates[chunkStart..<min(chunkStart + 4, groupCandidates.count)])
             _ = tabManager.createWorkspaceGroup(
@@ -146,11 +155,15 @@ final class SidebarLazyLayoutScaleTests {
         let root = VerticalTabsSidebar(
             updateViewModel: UpdateStateModel(),
             fileExplorerState: FileExplorerState(),
+            featureFlags: featureFlags,
+            sidebarUnread: unread,
+            titlebarControlsLayoutModel: TitlebarControlsLayoutModel(),
             windowId: UUID(),
             onSendFeedback: {},
             onToggleSidebar: {},
             onNewTab: {},
             observedWindowReference: WeakWindowReference(),
+            chromeBackgroundColor: .black,
             selection: .constant(.tabs),
             selectedTabIds: .constant([]),
             lastSidebarSelectionIndex: .constant(nil),
@@ -158,7 +171,6 @@ final class SidebarLazyLayoutScaleTests {
         )
         .frame(width: 280)
         .environmentObject(tabManager)
-        .environmentObject(unread)
         .environmentObject(CmuxConfigStore())
         .environmentObject(TerminalNotificationStore.shared)
         .environmentObject(SidebarState())
@@ -203,7 +215,10 @@ final class SidebarLazyLayoutScaleTests {
         // release]: message sent to deallocated instance"). That crash killed
         // the host before the pass was recorded, and CI masked it (#5641).
         window.isReleasedWhenClosed = false
+        window.acceptsMouseMovedEvents = true
         window.contentView = NSHostingView(rootView: root)
+        window.makeKeyAndOrderFront(nil)
+        window.displayIfNeeded()
 
         return Harness(
             tabManager: tabManager,
@@ -318,22 +333,39 @@ final class SidebarLazyLayoutScaleTests {
 
         await Self.drainMainRunLoop(for: harness.window)
 
-        // The default sidebar intentionally accepts the initial value from
-        // both workspace publisher families. Wait for those known initial
-        // projections before isolating the operation count for this burst.
-        // Initial mount builds fallback + owner snapshots, then each of the
-        // two keyed publisher families delivers its accepted initial value.
-        let initialObservationBuildFloor = Self.workspaceCount * 4
+        // Wait for initial workspace publishers to quiesce before isolating
+        // the operation count for this burst. The exact number of accepted
+        // initial projections is an implementation detail; the invariant is
+        // that every workspace is projected and the owner reaches a stable
+        // snapshot before the counter resets.
         let initialDeadline = ProcessInfo.processInfo.systemUptime + 3
-        while harness.counter.workspaceSnapshotBuilds < initialObservationBuildFloor,
+        var previousInitialBuildCount = -1
+        var stableInitialPasses = 0
+        while stableInitialPasses < 4,
               ProcessInfo.processInfo.systemUptime < initialDeadline {
             Self.turnMainRunLoopOnce(layingOut: harness.window)
             await Task.yield()
+            let currentBuildCount = harness.counter.workspaceSnapshotBuilds
+            if currentBuildCount == previousInitialBuildCount {
+                stableInitialPasses += 1
+            } else {
+                previousInitialBuildCount = currentBuildCount
+                stableInitialPasses = 0
+            }
         }
         #expect(
-            harness.counter.workspaceSnapshotBuilds >= initialObservationBuildFloor,
-            "Initial keyed workspace publisher values did not reach the snapshot owner."
+            harness.counter.workspaceSnapshotBuilds >= Self.workspaceCount,
+            "Initial workspace values did not reach the snapshot owner."
         )
+        #expect(
+            stableInitialPasses == 4,
+            "Initial workspace publishers did not quiesce before the batch measurement."
+        )
+        // Group creation publishes a separate row-input pass that may trail
+        // the workspace snapshot publisher by one main-actor turn. Drain it
+        // before resetting the counter so setup churn cannot contaminate the
+        // measured burst.
+        await Self.drainMainRunLoop(for: harness.window, iterations: 4)
 
         harness.counter.reset()
         let targets = Array(harness.tabManager.tabs.suffix(80))
@@ -360,10 +392,10 @@ final class SidebarLazyLayoutScaleTests {
         let projections = harness.counter.workspaceRowInputProjections
         #expect(projections > 0, "The parent row-input projection probe did not run.")
         #expect(
-            projections <= Self.workspaceCount * 4,
+            projections <= harness.tabManager.tabs.count * 4,
             """
             \(projections) parent row-input projections ran for one \(targets.count)-workspace \
-            event batch at \(Self.workspaceCount) workspaces. The batch must cause O(N) parent \
+            event batch at \(harness.tabManager.tabs.count) workspaces. The batch must cause O(N) parent \
             projection work, not O(N²) work from one parent invalidation per emitter.
             """
         )

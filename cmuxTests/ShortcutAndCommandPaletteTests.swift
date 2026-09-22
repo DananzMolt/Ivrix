@@ -16,6 +16,7 @@ import CmuxUpdater
 // so a blanket `import CmuxSettings` here makes those names ambiguous. Import only
 // the settings symbols this file needs.
 import struct CmuxSettings.AppCatalogSection
+import struct CmuxSettings.BetaFeaturesCatalogSection
 import struct CmuxSettings.QuitConfirmationStore
 import struct CmuxSettings.CommandPaletteSettingsStore
 import enum CmuxSettings.ConfirmQuitMode
@@ -85,7 +86,8 @@ final class CommandEquivalentTransientFocusRepairTests: XCTestCase {
             shouldRepairFocusedTerminalCommandEquivalentInputs(
                 flags: [.command],
                 responderIsWindow: true,
-                responderHasViableKeyRoutingOwner: false
+                responderHasViableKeyRoutingOwner: false,
+                responderMatchesPreferredKeyboardFocus: false
             )
         )
     }
@@ -95,17 +97,19 @@ final class CommandEquivalentTransientFocusRepairTests: XCTestCase {
             shouldRepairFocusedTerminalCommandEquivalentInputs(
                 flags: [.command],
                 responderIsWindow: false,
-                responderHasViableKeyRoutingOwner: false
+                responderHasViableKeyRoutingOwner: false,
+                responderMatchesPreferredKeyboardFocus: false
             )
         )
     }
 
-    func testDoesNotRepairCommandEquivalentWhenLiveResponderDiffersFromSelectedPane() {
-        XCTAssertFalse(
+    func testRepairsCommandEquivalentWhenLiveTerminalResponderDiffersFromSelectedPane() {
+        XCTAssertTrue(
             shouldRepairFocusedTerminalCommandEquivalentInputs(
                 flags: [.command],
                 responderIsWindow: false,
-                responderHasViableKeyRoutingOwner: true
+                responderHasViableKeyRoutingOwner: true,
+                responderMatchesPreferredKeyboardFocus: false
             )
         )
     }
@@ -115,7 +119,8 @@ final class CommandEquivalentTransientFocusRepairTests: XCTestCase {
             shouldRepairFocusedTerminalCommandEquivalentInputs(
                 flags: [.command],
                 responderIsWindow: false,
-                responderHasViableKeyRoutingOwner: true
+                responderHasViableKeyRoutingOwner: true,
+                responderMatchesPreferredKeyboardFocus: true
             )
         )
     }
@@ -125,7 +130,8 @@ final class CommandEquivalentTransientFocusRepairTests: XCTestCase {
             shouldRepairFocusedTerminalCommandEquivalentInputs(
                 flags: [],
                 responderIsWindow: true,
-                responderHasViableKeyRoutingOwner: false
+                responderHasViableKeyRoutingOwner: false,
+                responderMatchesPreferredKeyboardFocus: false
             )
         )
     }
@@ -875,10 +881,22 @@ final class CommandPaletteAuthCommandTests: XCTestCase {
 }
 
 final class CommandPaletteCloudCommandTests: XCTestCase {
+    @MainActor
     func testCloudCommandPaletteIncludesCloudWorkspaceActions() {
-        let commandIds = Set(ContentView.commandPaletteCloudCommandContributions().map(\.commandId))
+        let key = BetaFeaturesCatalogSection().cloudMachines.userDefaultsKey
+        let defaults = UserDefaults.standard
+        let original = defaults.object(forKey: key)
+        let flag = CmuxFeatureFlags.cloudMachinesFlag
+        let originalOverride = CmuxFeatureFlags.shared.overrideValue(for: flag)
+        defaults.set(true, forKey: key)
+        CmuxFeatureFlags.shared.setOverride(true, for: flag)
+        defer {
+            if let original { defaults.set(original, forKey: key) }
+            else { defaults.removeObject(forKey: key) }
+            CmuxFeatureFlags.shared.setOverride(originalOverride, for: flag)
+        }
+        let commandIds = Set(ContentView.commandPaletteCloudCommandContributions(isAuthenticated: true).map(\.commandId))
 
-        XCTAssertTrue(commandIds.contains(ContentView.commandPaletteCloudOpenCommandId))
         XCTAssertTrue(commandIds.contains(ContentView.commandPaletteCloudForkCommandId))
         XCTAssertTrue(commandIds.contains(ContentView.commandPaletteCloudSnapshotCommandId))
         XCTAssertTrue(commandIds.contains(ContentView.commandPaletteCloudRestoreCommandId))
@@ -887,6 +905,13 @@ final class CommandPaletteCloudCommandTests: XCTestCase {
         XCTAssertTrue(commandIds.contains(ContentView.commandPaletteCloudPortsCommandId))
         XCTAssertTrue(commandIds.contains(ContentView.commandPaletteCloudToolsCommandId))
         XCTAssertTrue(commandIds.contains(ContentView.commandPaletteCloudHandoffCommandId))
+
+        XCTAssertTrue(ContentView.commandPaletteCloudCommandContributions(isAuthenticated: false).isEmpty)
+        CmuxFeatureFlags.shared.setOverride(false, for: flag)
+        XCTAssertTrue(ContentView.commandPaletteCloudCommandContributions(isAuthenticated: true).isEmpty)
+        CmuxFeatureFlags.shared.setOverride(true, for: flag)
+        defaults.set(false, forKey: key)
+        XCTAssertTrue(ContentView.commandPaletteCloudCommandContributions(isAuthenticated: true).isEmpty)
     }
 
     func testCloudVMIdentityIsExplicitMetadata() {
@@ -1179,6 +1204,7 @@ final class ShortcutHintModifierPolicyTests: XCTestCase {
 }
 
 
+@MainActor
 final class RightSidebarModeShortcutHintTests: XCTestCase {
     private let touchedShortcutActions: [KeyboardShortcutSettings.Action] = [
         .focusRightSidebar,
@@ -1187,9 +1213,22 @@ final class RightSidebarModeShortcutHintTests: XCTestCase {
         .switchRightSidebarToSessions,
         .switchRightSidebarToFeed,
         .switchRightSidebarToDock,
+        .switchRightSidebarToMachines,
+    ]
+    /// The digit defaults are positional over the visible tabs, so the
+    /// expectations below pin every mode gate on and clear any tab
+    /// customization; otherwise the test host's own settings would shift the
+    /// digits.
+    private let touchedTabEnvironmentKeys: [String] = [
+        RightSidebarBetaFeatureSettings.feedEnabledKey,
+        RightSidebarBetaFeatureSettings.dockEnabledKey,
+        RightSidebarBetaFeatureSettings.cloudMachinesEnabledKey,
+        RightSidebarTabPreferences.orderKey,
+        RightSidebarTabPreferences.hiddenKey,
     ]
     private var originalSettingsFileStore: KeyboardShortcutSettingsFileStore!
     private var savedShortcutData: [KeyboardShortcutSettings.Action: Data?] = [:]
+    private var savedTabEnvironment: [String: Any?] = [:]
     private var temporaryDirectoryURL: URL?
 
     override func setUpWithError() throws {
@@ -1200,6 +1239,16 @@ final class RightSidebarModeShortcutHintTests: XCTestCase {
                 (action, UserDefaults.standard.data(forKey: action.defaultsKey))
             }
         )
+        savedTabEnvironment = Dictionary(
+            uniqueKeysWithValues: touchedTabEnvironmentKeys.map { key in
+                (key, UserDefaults.standard.object(forKey: key))
+            }
+        )
+        UserDefaults.standard.set(true, forKey: RightSidebarBetaFeatureSettings.feedEnabledKey)
+        UserDefaults.standard.set(true, forKey: RightSidebarBetaFeatureSettings.dockEnabledKey)
+        UserDefaults.standard.set(true, forKey: RightSidebarBetaFeatureSettings.cloudMachinesEnabledKey)
+        UserDefaults.standard.removeObject(forKey: RightSidebarTabPreferences.orderKey)
+        UserDefaults.standard.removeObject(forKey: RightSidebarTabPreferences.hiddenKey)
 
         let directoryURL = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
@@ -1224,6 +1273,13 @@ final class RightSidebarModeShortcutHintTests: XCTestCase {
                 UserDefaults.standard.removeObject(forKey: action.defaultsKey)
             }
         }
+        for key in touchedTabEnvironmentKeys {
+            if case let .some(.some(value)) = savedTabEnvironment[key] {
+                UserDefaults.standard.set(value, forKey: key)
+            } else {
+                UserDefaults.standard.removeObject(forKey: key)
+            }
+        }
         KeyboardShortcutSettings.settingsFileStore = originalSettingsFileStore
         KeyboardShortcutSettings.notifySettingsFileDidChange()
         if let temporaryDirectoryURL {
@@ -1238,9 +1294,11 @@ final class RightSidebarModeShortcutHintTests: XCTestCase {
         XCTAssertEqual(RightSidebarMode.sessions.shortcutAction, .switchRightSidebarToSessions)
         XCTAssertEqual(RightSidebarMode.feed.shortcutAction, .switchRightSidebarToFeed)
         XCTAssertEqual(RightSidebarMode.dock.shortcutAction, .switchRightSidebarToDock)
+        XCTAssertEqual(RightSidebarMode.machines.shortcutAction, .switchRightSidebarToMachines)
     }
 
     func testModeShortcutsUsePrivateControlDigitDefaults() {
+        CmuxFeatureFlags.shared.setOverride(true, for: CmuxFeatureFlags.cloudMachinesFlag)
         XCTAssertEqual(
             RightSidebarMode.modeShortcut(for: makeKeyDownEvent(key: "1", modifiers: [.control], keyCode: 18)),
             .files
@@ -1260,6 +1318,27 @@ final class RightSidebarModeShortcutHintTests: XCTestCase {
         XCTAssertEqual(
             RightSidebarMode.modeShortcut(for: makeKeyDownEvent(key: "5", modifiers: [.control], keyCode: 23)),
             .dock
+        )
+        XCTAssertEqual(
+            RightSidebarMode.modeShortcut(for: makeKeyDownEvent(key: "6", modifiers: [.control], keyCode: 22)),
+            .machines
+        )
+    }
+
+    /// The reported bug: Feed and Dock hidden leaves Cloud as the 4th visible
+    /// tab, so ctrl+4 must select it (the old static table pinned Cloud to
+    /// ctrl+6 while ctrl+4 fell on the invisible Feed and did nothing).
+    func testModeShortcutDigitsFollowVisibleTabPositions() {
+        CmuxFeatureFlags.shared.setOverride(true, for: CmuxFeatureFlags.cloudMachinesFlag)
+        UserDefaults.standard.set(false, forKey: RightSidebarBetaFeatureSettings.feedEnabledKey)
+        UserDefaults.standard.set(false, forKey: RightSidebarBetaFeatureSettings.dockEnabledKey)
+
+        XCTAssertEqual(
+            RightSidebarMode.modeShortcut(for: makeKeyDownEvent(key: "4", modifiers: [.control], keyCode: 21)),
+            .machines
+        )
+        XCTAssertNil(
+            RightSidebarMode.modeShortcut(for: makeKeyDownEvent(key: "5", modifiers: [.control], keyCode: 23))
         )
     }
 
@@ -2007,10 +2086,10 @@ final class UpdateChannelSettingsTests: XCTestCase {
     }
 
     func testResolvedFeedDetectsNightlyFromInfoFeedURL() {
-        let resolved = UpdateFeedResolver().resolve(
+        let resolved = UpdateFeedResolver(hostArchitecture: .arm64).resolve(
             infoFeedURL: "https://example.com/nightly/appcast.xml"
         )
-        XCTAssertEqual(resolved.url, "https://example.com/nightly/appcast.xml")
+        XCTAssertEqual(resolved.url, "https://example.com/nightly/appcast-arm64.xml")
         XCTAssertTrue(resolved.isNightly)
         XCTAssertFalse(resolved.usedFallback)
     }

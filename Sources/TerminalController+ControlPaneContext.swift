@@ -15,6 +15,10 @@ extension TerminalController: ControlPaneContext {
         String(localized: "socket.pane.resize.invalidParameters", defaultValue: "Invalid pane resize parameters")
     }
 
+    func controlPaneSurfaceNotFoundMessage() -> String {
+        String(localized: "socket.pane.error.surfaceNotFound", defaultValue: "Surface not found")
+    }
+
     // MARK: - Routing helpers
 
     /// The routing twin of the legacy `v2ResolveWorkspace(params:tabManager:)`,
@@ -94,8 +98,10 @@ extension TerminalController: ControlPaneContext {
             guard let paneId = dock.bonsplitController.allPaneIds.first(where: { $0.id == paneID }) else {
                 return .paneNotFound(paneID)
             }
-            focusAndRevealWindowDock(for: dock, fallback: tabManager)
-            dock.bonsplitController.focusPane(paneId)
+            guard focusAndRevealWindowDock(for: dock, fallback: tabManager) else {
+                return .dockUnavailable(message: dockFocusUnavailableMessage())
+            }
+            dock.focusPaneFromDockInteraction(paneId, window: nil)
             return .focused(windowID: dockResultWindowId(for: dock, tabManager: tabManager), workspaceID: dock.workspaceId, paneID: paneId.id)
         }
         guard let ws = resolveWorkspace(routing: routing, tabManager: tabManager) else {
@@ -272,6 +278,7 @@ extension TerminalController: ControlPaneContext {
                     insertFirst: insertFirst,
                     workingDirectory: inputs.workingDirectory,
                     initialCommand: inputs.initialCommand,
+                    initialInput: inputs.initialInput,
                     tmuxStartCommand: inputs.tmuxStartCommand,
                     startupEnvironment: inputs.startupEnvironment,
                     initialDividerPosition: initialDividerPosition
@@ -303,6 +310,7 @@ extension TerminalController: ControlPaneContext {
                 insertFirst: insertFirst,
                 workingDirectory: inputs.workingDirectory,
                 initialCommand: inputs.initialCommand,
+                initialInput: inputs.initialInput,
                 tmuxStartCommand: inputs.tmuxStartCommand,
                 startupEnvironment: inputs.startupEnvironment,
                 initialDividerPosition: initialDividerPosition
@@ -325,6 +333,14 @@ extension TerminalController: ControlPaneContext {
                 creationPolicy: .automationPreload,
                 initialDividerPosition: initialDividerPosition.map { CGFloat($0) }
             )?.id
+        } else if panelType == .simulator {
+            newPanelId = ws.newSimulatorSplit(
+                from: sourcePanelId,
+                orientation: orientation,
+                insertFirst: insertFirst,
+                focus: focus,
+                initialDividerPosition: initialDividerPosition.map { CGFloat($0) }
+            )?.id
         } else {
             switch ws.newTerminalSplitOutcome(
                 from: sourcePanelId,
@@ -333,6 +349,7 @@ extension TerminalController: ControlPaneContext {
                 focus: focus,
                 workingDirectory: inputs.workingDirectory,
                 initialCommand: inputs.initialCommand,
+                initialInput: inputs.initialInput,
                 tmuxStartCommand: inputs.tmuxStartCommand,
                 startupEnvironment: inputs.startupEnvironment,
                 initialDividerPosition: initialDividerPosition.map { CGFloat($0) },
@@ -365,28 +382,7 @@ extension TerminalController: ControlPaneContext {
         )
     }
 
-    /// The byte-faithful twin of `v2PanelType`, mapping a raw token to a
-    /// `PanelType` (used only by the create path; the coordinator passes the raw
-    /// string so Bonsplit/PanelType stay app-side).
-    private func panelType(forRawToken raw: String) -> PanelType? {
-        switch v2NormalizedToken(raw) {
-        case "terminal":
-            return .terminal
-        case "browser":
-            return .browser
-        case "markdown":
-            return .markdown
-        case "filepreview":
-            return .filePreview
-        case "rightsidebartool":
-            return .rightSidebarTool
-        case "agentsession":
-            return .agentSession
-        default:
-            return nil
-        }
-    }
-
+    private func panelType(forRawToken raw: String) -> PanelType? { v2PanelType(rawToken: raw) }
     /// The byte-faithful twin of `v2BrowserDisabledExternalOpenResult`, mapped
     /// onto ``ControlPaneCreateResolution``.
     private func browserDisabledCreateResolution(

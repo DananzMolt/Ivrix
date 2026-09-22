@@ -44,6 +44,13 @@ test -x "$SIGN_UPDATE" || {
 BUILD="$(/usr/libexec/PlistBuddy -c 'Print :CURRENT_PROJECT_VERSION' /dev/stdin 2>/dev/null <<<"" || true)"
 BUILD="${IVRIX_BUILD:-$(grep -m1 'CURRENT_PROJECT_VERSION = ' "$REPO/cmux.xcodeproj/project.pbxproj" | sed 's/.*= \(.*\);/\1/')}"
 
+# Sparkle refuses an update whose minimumSystemVersion exceeds the running
+# system. Derive it from the project rather than hardcoding: upstream raised
+# the floor from 13.0 to 14.0 during the 2026-09 sync, and a stale 13.0 here
+# would offer the update to a macOS 13 machine that cannot launch it.
+MIN_MACOS="${IVRIX_MIN_MACOS:-$(grep -m1 'MACOSX_DEPLOYMENT_TARGET = ' "$REPO/cmux.xcodeproj/project.pbxproj" | sed 's/.*= \(.*\);/\1/')}"
+test -n "$MIN_MACOS" || { echo "ERROR: could not determine MACOSX_DEPLOYMENT_TARGET" >&2; exit 1; }
+
 LENGTH="$(stat -f%z "$DMG")"
 PUBDATE="$(date -u '+%a, %d %b %Y %H:%M:%S +0000')"
 URL="https://github.com/$REPO_SLUG/releases/download/$TAG/$(basename "$DMG")"
@@ -70,7 +77,7 @@ cat > "$OUT" <<XML
       <pubDate>$PUBDATE</pubDate>
       <sparkle:version>$BUILD</sparkle:version>
       <sparkle:shortVersionString>$VERSION</sparkle:shortVersionString>
-      <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+      <sparkle:minimumSystemVersion>$MIN_MACOS</sparkle:minimumSystemVersion>
       <link>https://github.com/$REPO_SLUG/releases/tag/$TAG</link>
       <enclosure url="$URL" $SIGN_OUT type="application/octet-stream" />
     </item>
@@ -78,6 +85,6 @@ cat > "$OUT" <<XML
 </rss>
 XML
 
-echo "==> wrote $OUT (version=$VERSION build=$BUILD length=$LENGTH)"
+echo "==> wrote $OUT (version=$VERSION build=$BUILD minMacOS=$MIN_MACOS length=$LENGTH)"
 echo "    upload it to the $TAG release so the feed URL resolves:"
 echo "    gh release upload $TAG \"$OUT\" --repo $REPO_SLUG"

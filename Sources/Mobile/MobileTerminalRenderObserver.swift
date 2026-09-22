@@ -1,6 +1,7 @@
 import CMUXMobileCore
 import CmuxTerminal
 import Foundation
+import GhosttyKit
 import os
 
 /// Pushes terminal render events only while a mobile client is actively subscribed.
@@ -20,8 +21,8 @@ final class MobileTerminalRenderObserver {
     private var isEmitFlushScheduled = false
     private var renderGridStatesBySurfaceID:
         [UUID: [MobileTerminalRenderGridFrame.Anchor: MobileTerminalRenderGridEmissionState]] = [:]
-    private var terminalThemesBySurfaceID: [UUID: TerminalTheme] = [:]
-    private var terminalConfigThemesBySurfaceID: [UUID: TerminalTheme] = [:]
+    var terminalThemesBySurfaceID: [UUID: TerminalTheme] = [:]
+    var terminalConfigThemesBySurfaceID: [UUID: TerminalTheme] = [:]
     private var runtimeSurfaceGenerationsBySurfaceID: [UUID: UInt64] = [:]
     private var reconciledSurfaceTopologyGeneration: UInt64?
     private var cachedTerminalTheme: TerminalTheme = .monokai
@@ -209,6 +210,9 @@ final class MobileTerminalRenderObserver {
     }
 
     private func flushTerminalUpdates() {
+        #if DEBUG
+        HostLatencyTrace.stamp("host.flush", "pending=\(pendingSurfaceIDs.count)")
+        #endif
         isEmitFlushScheduled = false
         guard hasAnyRenderEventSubscribers else {
             refreshNotificationDemand()
@@ -229,10 +233,16 @@ final class MobileTerminalRenderObserver {
             MobileHostService.emitEvent(topic: "terminal.updated", payload: [:])
         } else if shouldEmitUpdatedEvents {
             for surfaceID in surfaceIDs {
-                MobileHostService.emitEvent(
-                    topic: "terminal.updated",
-                    payload: ["surface_id": surfaceID.uuidString]
-                )
+                // The effective grid rides along so a raw-byte subscriber (another
+                // Mac's Devices sidebar) learns of a resize without render grids.
+                var payload: [String: Any] = ["surface_id": surfaceID.uuidString]
+                if let surface = GhosttyApp.terminalSurfaceRegistry.terminalSurface(id: surfaceID)?
+                    .liveSurfaceForGhosttyAccess(reason: "mobile.terminal.updated") {
+                    let size = ghostty_surface_size(surface)
+                    payload["columns"] = max(Int(size.columns), 1)
+                    payload["rows"] = max(Int(size.rows), 1)
+                }
+                MobileHostService.emitEvent(topic: "terminal.updated", payload: payload)
             }
         }
 
@@ -301,6 +311,9 @@ final class MobileTerminalRenderObserver {
         var surfaceIDString: String?
 
         for anchor in anchors {
+            #if DEBUG
+            let latencyExportStart = HostLatencyTrace.captureTime()
+            #endif
             guard let emitted = emitRenderGridFrame(
                 surface: surface,
                 surfaceID: surfaceID,
@@ -312,6 +325,16 @@ final class MobileTerminalRenderObserver {
                 sharedTheme: &sharedTheme
             ) else { continue }
             guard let payloadJSON = try? JSONEncoder().encode(emitted) else { continue }
+            #if DEBUG
+            HostLatencyTrace.stampElapsed(
+                "host.grid",
+                since: latencyExportStart
+            ) {
+                "s=\(surfaceID.uuidString.prefix(8).lowercased()) seq=\(emitted.stateSeq) " +
+                    "exp_us=\($0) bytes=\(payloadJSON.count) " +
+                    "kind=\(emitted.full ? "full" : "delta")"
+            }
+            #endif
             framesByAnchor[anchor] = (payloadJSON, emitted.full)
             emittedByAnchor[anchor] = emitted
             surfaceIDString = emitted.surfaceID
@@ -319,7 +342,8 @@ final class MobileTerminalRenderObserver {
         guard !framesByAnchor.isEmpty, let surfaceIDString else { return }
         MobileHostService.emitRenderGridEvent(
             framesByAnchor: framesByAnchor,
-            surfaceID: surfaceIDString
+            surfaceID: surfaceIDString,
+            stateSeq: stateSeq
         )
         #if DEBUG
         for (anchor, frame) in emittedByAnchor {
@@ -407,14 +431,19 @@ final class MobileTerminalRenderObserver {
             themedFrame.terminalTheme = resolvedTheme.theme
             themedFrame.terminalThemeRevision = resolvedTheme.revision
 
+            let previousEmissionState = renderGridStatesBySurfaceID[surfaceID]?[anchor]
             guard let emission = try? themedFrame.renderGridEmission(
-                comparedTo: renderGridStatesBySurfaceID[surfaceID]?[anchor],
+                comparedTo: previousEmissionState,
                 fullScrollbackTarget: fullScrollbackTarget,
                 allowScrollbackRequest: allowScrollbackRequest
             ) else { return nil }
             switch emission {
             case .emit(let frame, let state):
                 renderGridStatesBySurfaceID[surfaceID, default: [:]][anchor] = state
+                var frame = frame
+                frame.appliedInputSequence = MobileTerminalByteTee.shared.currentInputSequence(
+                    surfaceID: surfaceID
+                )
                 return frame
             case .needsScrollback(let rows):
                 // Re-export once with the requested history rows; the retry
@@ -447,6 +476,12 @@ final class MobileTerminalRenderObserver {
     func adoptReplayBaseline(_ frame: MobileTerminalRenderGridFrame, surfaceID: UUID) {
         guard frame.anchor == .screen else { return }
         renderGridStatesBySurfaceID[surfaceID, default: [:]][.screen] = frame.emissionState
+        // Replay uses the same decorated theme/config state as the phone. Keep
+        // the resolver caches in that state as well, otherwise the next live
+        // capture resolves missing theme fields from a different source and
+        // promotes the delta to a full frame.
+        terminalThemesBySurfaceID[surfaceID] = frame.terminalTheme
+        terminalConfigThemesBySurfaceID[surfaceID] = frame.terminalConfigTheme
     }
 
     func decorateReplayFrame(_ frame: MobileTerminalRenderGridFrame) -> MobileTerminalRenderGridFrame {

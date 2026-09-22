@@ -45,6 +45,11 @@ public struct SSHConnectionSharingOptions: Sendable {
         "/tmp/cmux-ssh-\(userID)-%C"
     }
 
+    /// User-private directory used for cross-process ControlMaster locks.
+    public var controlMasterLockDirectoryPath: String {
+        authenticationLockDirectory.path
+    }
+
     /// Adds missing sharing defaults while preserving every supplied value.
     ///
     /// A caller that disables `ControlMaster` keeps a standalone connection;
@@ -60,15 +65,14 @@ public struct SSHConnectionSharingOptions: Sendable {
     /// Adds sharing defaults while honoring effective control settings from
     /// the user's SSH configuration.
     ///
-    /// Explicit caller options retain highest precedence. When the caller did
-    /// not provide any control option and `ssh -G` reported non-default
-    /// control settings, those effective values are carried forward instead
-    /// of installing cmux's socket.
+    /// Explicit caller options retain highest precedence per key. Independently
+    /// configured host control settings fill the remaining keys instead of
+    /// installing cmux's socket.
     ///
     /// - Parameters:
     ///   - options: Explicit OpenSSH `-o` values.
     ///   - userConfiguredControlOptions: Effective custom values parsed by
-    ///     ``userConfiguredControlOptions(fromSSHConfigOutput:)``.
+    ///     ``userConfiguredControlOptions(fromSSHConfigOutput:explicitOptions:)``.
     /// - Returns: Effective explicit options for native SSH commands.
     public func mergingDefaults(
         into options: [String],
@@ -89,10 +93,16 @@ public struct SSHConnectionSharingOptions: Sendable {
                 }
             }
         }
-        let controlMaster = resolver.optionValue(named: "ControlMaster", in: merged)
+        let controlMaster = resolver.optionValue(
+            named: "ControlMaster",
+            in: merged
+        )
         let controlMasterDisabled = isDisabled(controlMaster)
         if !controlMasterDisabled,
-           let controlPath = resolver.optionValue(named: "ControlPath", in: merged),
+           let controlPath = resolver.optionValue(
+               named: "ControlPath",
+               in: merged
+           ),
            isLegacyRelayScopedControlPath(controlPath) {
             merged = merged.map { option in
                 guard resolver.optionKey(option) == "controlpath" else { return option }
@@ -125,6 +135,25 @@ public struct SSHConnectionSharingOptions: Sendable {
     ///   cmux control options are added.
     /// - Returns: Effective custom `-o` values, or `nil` for OpenSSH defaults.
     public func userConfiguredControlOptions(fromSSHConfigOutput output: String) -> [String]? {
+        userConfiguredControlOptions(fromSSHConfigOutput: output, explicitOptions: [])
+    }
+
+    /// Parses resolved host control settings with the explicit caller options
+    /// that were included in the `ssh -G` invocation.
+    ///
+    /// Explicit values do not prove host customization: OpenSSH includes them in
+    /// its output and normalizes `ControlPersist=0` to `yes`. A custom value on
+    /// another control key still preserves the host's full effective settings,
+    /// with explicit options retaining precedence when merged.
+    ///
+    /// - Parameters:
+    ///   - output: Effective configuration reported by OpenSSH.
+    ///   - explicitOptions: Caller-provided `-o` values included in that output.
+    /// - Returns: Effective custom host control settings, or `nil` for defaults.
+    public func userConfiguredControlOptions(
+        fromSSHConfigOutput output: String,
+        explicitOptions: [String]
+    ) -> [String]? {
         var values: [String: String] = [:]
         for line in output.split(whereSeparator: \.isNewline) {
             let parts = line.split(maxSplits: 1, whereSeparator: \.isWhitespace)
@@ -140,9 +169,12 @@ public struct SSHConnectionSharingOptions: Sendable {
         let controlMaster = values["controlmaster"] ?? "false"
         let controlPath = values["controlpath"] ?? "none"
         let controlPersist = values["controlpersist"] ?? "no"
-        let hasCustomValue = !isDisabled(controlMaster)
-            || controlPath.lowercased() != "none"
-            || !["no", "false", "off", "0"].contains(controlPersist.lowercased())
+        let resolver = SSHAgentSocketResolver()
+        let hasCustomValue =
+            (!resolver.hasOptionKey(explicitOptions, key: "ControlMaster") && !isDisabled(controlMaster))
+            || (!resolver.hasOptionKey(explicitOptions, key: "ControlPath") && controlPath.lowercased() != "none")
+            || (!resolver.hasOptionKey(explicitOptions, key: "ControlPersist")
+                && !["no", "false", "off", "0"].contains(controlPersist.lowercased()))
         guard hasCustomValue else { return nil }
         return [
             "ControlMaster=\(controlMaster)",
@@ -159,10 +191,16 @@ public struct SSHConnectionSharingOptions: Sendable {
     /// - Returns: The cmux-owned path, or `nil` for user-managed paths.
     public func cmuxOwnedControlPath(in options: [String]) -> String? {
         let resolver = SSHAgentSocketResolver()
-        guard !isDisabled(resolver.optionValue(named: "ControlMaster", in: options)) else {
+        guard !isDisabled(resolver.optionValue(
+            named: "ControlMaster",
+            in: options
+        )) else {
             return nil
         }
-        guard let rawPath = resolver.optionValue(named: "ControlPath", in: options) else {
+        guard let rawPath = resolver.optionValue(
+            named: "ControlPath",
+            in: options
+        ) else {
             return nil
         }
         let path = rawPath.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -212,6 +250,40 @@ public struct SSHConnectionSharingOptions: Sendable {
             .path
     }
 
+    /// Returns the shared authentication lock for one exact cmux-owned socket.
+    ///
+    /// Unlike ``foregroundAuthenticationLockPath(destination:port:options:)``,
+    /// this identity is stable across different SSH aliases that OpenSSH
+    /// expands to the same `ControlPath`.
+    public func resolvedControlMasterAuthenticationLockPath(
+        controlPath: String
+    ) -> String? {
+        guard let basename = resolvedControlPathBasename(controlPath) else {
+            return nil
+        }
+        return authenticationLockDirectory
+            .appendingPathComponent(
+                "cmux-ssh-\(userID)-resolved-auth-\(basename).lock",
+                isDirectory: false
+            )
+            .path
+    }
+
+    /// Returns the process-ownership gate for one exact cmux-owned socket.
+    public func resolvedControlMasterOwnershipLockPath(
+        controlPath: String
+    ) -> String? {
+        guard let basename = resolvedControlPathBasename(controlPath) else {
+            return nil
+        }
+        return authenticationLockDirectory
+            .appendingPathComponent(
+                "cmux-ssh-\(userID)-owner-\(basename).lock",
+                isDirectory: false
+            )
+            .path
+    }
+
     /// Returns the shell commands that finish successful foreground authentication.
     ///
     /// The marker must be cleared before the advisory lock is released so a
@@ -222,6 +294,7 @@ public struct SSHConnectionSharingOptions: Sendable {
     public func successfulForegroundAuthenticationCleanupShellLines() -> [String] {
         [
             "cmux_ssh_clear_auth_inflight",
+            "if [ -n \"${cmux_ssh_resolved_auth_lock_fd:-}\" ]; then zsystem flock -u \"$cmux_ssh_resolved_auth_lock_fd\" || exit 255; fi",
             "zsystem flock -u \"$cmux_ssh_auth_lock_fd\" || exit 255",
             "trap - EXIT HUP INT TERM",
         ]
@@ -289,11 +362,30 @@ public struct SSHConnectionSharingOptions: Sendable {
         return hash.count == 40 && hash.allSatisfy(\.isHexDigit)
     }
 
+    private func resolvedControlPathBasename(_ controlPath: String) -> String? {
+        let path = controlPath.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !path.contains("%"),
+              cmuxOwnedControlPath(in: [
+                  "ControlMaster=auto",
+                  "ControlPath=\(path)",
+              ]) == path else {
+            return nil
+        }
+        let basename = URL(fileURLWithPath: path).lastPathComponent
+        guard !basename.isEmpty,
+              basename.allSatisfy({
+                  $0.isLetter || $0.isNumber || $0 == "." || $0 == "_" || $0 == "-"
+              }) else {
+            return nil
+        }
+        return basename
+    }
+
     private func isDisabled(_ rawValue: String?) -> Bool {
         guard let value = rawValue?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() else {
             return false
         }
-        return ["no", "false", "off"].contains(value)
+        return ["no", "false", "off", "0"].contains(value)
     }
 
     private func shellQuote(_ value: String) -> String {

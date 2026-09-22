@@ -65,11 +65,43 @@ APP="$STAGE/Ivrix.app"
 echo "==> [1/6] re-signing (Developer ID + hardened runtime, inside-out)"
 COMMON=(--force --options runtime --timestamp --sign "$SIGN_IDENTITY")
 
+# Ivrix does not ship the cmux Cloud tunnel. Two independent reasons, both from
+# upstream's scripts/sign-cmux-bundle.sh:
+#   1. The extension's entitlements are hardcoded to cmux's team (7WLXT3NR37)
+#      and require a Developer ID NetworkExtension provisioning profile. Ivrix
+#      signs as Q2V86449AC and has no such profile, so the extension could never
+#      activate.
+#   2. macOS rejects com.apple.security.cs.allow-unsigned-executable-memory and
+#      com.apple.security.cs.disable-library-validation on an app that bundles a
+#      packet-tunnel system extension, and scripts/ivrix.entitlements needs both.
+#      Shipping it would break app launch, not just notarization.
+# Upstream does exactly this (rm -rf) whenever the profile lacks the capability.
+if [[ -d "$APP/Contents/Library/SystemExtensions" ]]; then
+  echo "    removing Contents/Library/SystemExtensions (Ivrix has no Cloud tunnel capability)"
+  rm -rf "$APP/Contents/Library/SystemExtensions"
+fi
+
 for helper in "$APP/Contents/Resources/bin"/*; do
   [[ -f "$helper" ]] || continue
+  # Non-Mach-O helpers are sealed by the bundle signature. Signing a script
+  # directly stores the signature in an xattr, which Sparkle's BinaryDelta
+  # refuses to diff and which would block delta updates.
+  if ! /usr/bin/file -b "$helper" | grep -q 'Mach-O'; then
+    echo "    (sealed by bundle) $(basename "$helper")"
+    continue
+  fi
   echo "    helper: $(basename "$helper")"
   codesign "${COMMON[@]}" --entitlements "$HELPER_ENTITLEMENTS" "$helper"
 done
+
+# Nested Computer Use helper app. Not covered by the bin/PlugIns/Frameworks
+# loops, which is why notarization rejected it as unsigned. Signed with the
+# helper entitlements and WITHOUT --deep, matching upstream step 2.
+if [[ -d "$APP/Contents/Library/cmux Computer Use.app" ]]; then
+  echo "    nested app: cmux Computer Use.app"
+  codesign "${COMMON[@]}" --entitlements "$HELPER_ENTITLEMENTS" \
+    "$APP/Contents/Library/cmux Computer Use.app"
+fi
 
 if [[ -d "$APP/Contents/PlugIns" ]]; then
   while IFS= read -r -d '' plugin; do
@@ -88,6 +120,39 @@ fi
 echo "    main bundle: Ivrix.app"
 codesign "${COMMON[@]}" --entitlements "$ENTITLEMENTS" "$APP"
 codesign --verify --deep --strict --verbose=2 "$APP" 2>&1 | tail -2
+
+# --- 1b. pre-flight: every Mach-O must be Developer ID signed + hardened ---
+# Apple's notary service takes minutes to tell you about an unsigned nested
+# binary. This is the same check locally, in seconds. Submission 949eb880
+# (Ivrix 1.2.0) failed on exactly this: two nested bundles under
+# Contents/Library that the signing loops above did not reach.
+echo "==> [1b/6] pre-flight signature audit"
+preflight_failed=0
+while IFS= read -r -d '' macho; do
+  /usr/bin/file -b "$macho" | grep -q 'Mach-O' || continue
+  details="$(codesign -dvv "$macho" 2>&1 || true)"
+  rel="${macho#"$APP"/}"
+  if ! grep -q "^Authority=$SIGN_IDENTITY\$" <<<"$details"; then
+    echo "    NOT Developer ID signed: $rel" >&2
+    preflight_failed=1
+    continue
+  fi
+  if ! grep -q 'flags=.*runtime' <<<"$details"; then
+    echo "    missing hardened runtime: $rel" >&2
+    preflight_failed=1
+  fi
+done < <(find "$APP" -type f -perm +111 -print0)
+
+if [[ -d "$APP/Contents/Library/SystemExtensions" ]]; then
+  echo "    Contents/Library/SystemExtensions still present" >&2
+  preflight_failed=1
+fi
+
+if [[ "$preflight_failed" -ne 0 ]]; then
+  echo "ERROR: pre-flight failed; not submitting to Apple." >&2
+  exit 1
+fi
+echo "    all nested Mach-O binaries: Developer ID + hardened runtime"
 
 # --- 2. notarize the app ---
 echo "==> [2/6] notarizing app (this can take minutes)"

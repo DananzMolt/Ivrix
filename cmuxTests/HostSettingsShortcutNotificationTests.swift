@@ -1,3 +1,4 @@
+@testable import CmuxComputerUse
 import Foundation
 import Testing
 
@@ -56,13 +57,17 @@ struct HostSettingsShortcutNotificationTests {
             forName: KeyboardShortcutSettings.didChangeNotification,
             object: nil,
             queue: nil
-        ) { _ in
+        ) { notification in
+            guard notification.object as? URL == settingsFileURL else { return }
             counter.increment()
         }
         defer { NotificationCenter.default.removeObserver(observer) }
 
         try updatedContents.write(to: settingsFileURL, atomically: true, encoding: .utf8)
-        HostSettingsActions(configFileURL: settingsFileURL).notifyShortcutSettingsDidChange()
+        HostSettingsActions(
+            configFileURL: settingsFileURL,
+            computerUseRuntimeService: ComputerUseRuntimeService()
+        ).notifyShortcutSettingsDidChange()
 
         #expect(counter.value == expectedNotificationCount)
     }

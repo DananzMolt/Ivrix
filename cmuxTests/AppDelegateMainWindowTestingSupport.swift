@@ -53,9 +53,30 @@ actor AppContextSerialGate {
 /// Test-only main-window context seams, kept in the test target per the
 /// debug-seam policy and reaching internal AppDelegate state via
 /// `@testable import`. Tests register a windowless context and tear it down
-/// through the same removal path the real window-close flow uses, including
-/// per-window Dock teardown.
+/// through the same recoverable path used while SwiftUI replaces a context.
+/// Tests that model an authoritative close explicitly forget the resulting
+/// route after they finish exercising its recovery behavior.
 extension AppDelegate {
+    /// Establishes the real window/controller/terminal focus relationship before input probes.
+    func focusTerminalForTesting(_ panel: TerminalPanel, workspace: Workspace, in window: NSWindow) async -> Bool {
+        window.makeKeyAndOrderFront(nil)
+        window.displayIfNeeded()
+        guard await AppKitTestEventPump().waitUntil({
+            panel.hostedView.uiWindow === window
+                && panel.hostedView.surfaceView.window === window
+                && panel.hostedView.bounds.width > 1
+                && panel.hostedView.bounds.height > 1
+                && panel.hostedView.surfaceView.bounds.width > 1
+                && panel.hostedView.surfaceView.bounds.height > 1
+                && window.isKeyWindow
+        }) else { return false }
+        noteMainPanelKeyboardFocusIntent(workspaceId: workspace.id, panelId: panel.id, in: window)
+        workspace.focusPanel(panel.id, focusIntent: .terminal(.surface))
+        return window.makeFirstResponder(panel.hostedView.surfaceView)
+            && window.firstResponder === panel.hostedView.surfaceView
+            && allowsTerminalKeyboardFocus(workspaceId: workspace.id, panelId: panel.id, in: window)
+    }
+
     @discardableResult
     func registerMainWindowContextForTesting(
         windowId: UUID = UUID(),
@@ -64,14 +85,20 @@ extension AppDelegate {
         fileExplorerState: FileExplorerState? = nil
     ) -> UUID {
         tabManager.windowId = windowId
-        mainWindowContexts[ObjectIdentifier(tabManager)] = MainWindowContext(
+        let context = MainWindowContext(
             windowId: windowId,
             tabManager: tabManager,
             sidebarState: SidebarState(),
             sidebarSelectionState: SidebarSelectionState(),
             fileExplorerState: fileExplorerState,
             cmuxConfigStore: cmuxConfigStore,
-            window: nil
+            window: nil,
+            workspaceTerminalFontSizeArbiter:
+                workspaceTerminalFontSizeArbiter
+        )
+        mainWindowLifecycleCoordinator.register(
+            context,
+            lookupKey: ObjectIdentifier(tabManager)
         )
         // Context-based tests exercise observer pipelines without a live phone
         // subscriber; force presence on so the graph attaches (pre-gate
@@ -96,7 +123,17 @@ extension AppDelegate {
         let previousActiveBelongsToRemovedWindow = previousActive.map { active in
             mainWindowContexts.values.contains { $0.windowId == windowId && $0.tabManager === active }
         } ?? false
-        mainWindowContexts.values.filter { $0.windowId == windowId }.forEach { discardOrphanedMainWindowContext($0, allowWindowlessFallback: true) }
+        let contexts = mainWindowContexts.values.filter { $0.windowId == windowId }
+        guard !contexts.isEmpty else {
+            forgetRecoverableMainWindowRoute(windowId: windowId)
+            if !previousActiveBelongsToRemovedWindow {
+                TerminalController.shared.setActiveTabManager(previousActive)
+            }
+            return
+        }
+        contexts.forEach {
+            discardOrphanedMainWindowContext($0, allowWindowlessFallback: true)
+        }
         if !previousActiveBelongsToRemovedWindow {
             TerminalController.shared.setActiveTabManager(previousActive)
         }
