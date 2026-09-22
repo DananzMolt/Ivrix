@@ -72,11 +72,43 @@ echo "==> re-signing (Developer ID + hardened runtime, inside-out)"
 COMMON=(--force --options runtime --timestamp --sign "$SIGN_IDENTITY")
 
 # 1. CLI helpers (Resources/bin/*) with minimal helper entitlements.
+# Ivrix does not ship the cmux Cloud tunnel. Two independent reasons, both from
+# upstream's scripts/sign-cmux-bundle.sh:
+#   1. The extension's entitlements are hardcoded to cmux's team (7WLXT3NR37)
+#      and require a Developer ID NetworkExtension provisioning profile. Ivrix
+#      signs as Q2V86449AC and has no such profile, so the extension could never
+#      activate.
+#   2. macOS rejects com.apple.security.cs.allow-unsigned-executable-memory and
+#      com.apple.security.cs.disable-library-validation on an app that bundles a
+#      packet-tunnel system extension, and scripts/ivrix.entitlements needs both.
+#      Shipping it would break app launch, not just notarization.
+# Upstream does exactly this (rm -rf) whenever the profile lacks the capability.
+if [[ -d "$APP/Contents/Library/SystemExtensions" ]]; then
+  echo "    removing Contents/Library/SystemExtensions (Ivrix has no Cloud tunnel capability)"
+  rm -rf "$APP/Contents/Library/SystemExtensions"
+fi
+
 for helper in "$APP/Contents/Resources/bin"/*; do
   [[ -f "$helper" ]] || continue
+  # Non-Mach-O helpers are sealed by the bundle signature. Signing a script
+  # directly stores the signature in an xattr, which Sparkle's BinaryDelta
+  # refuses to diff and which would block delta updates.
+  if ! /usr/bin/file -b "$helper" | grep -q 'Mach-O'; then
+    echo "    (sealed by bundle) $(basename "$helper")"
+    continue
+  fi
   echo "    helper: $(basename "$helper")"
   codesign "${COMMON[@]}" --entitlements "$HELPER_ENTITLEMENTS" "$helper"
 done
+
+# Nested Computer Use helper app. Not covered by the bin/PlugIns/Frameworks
+# loops, which is why notarization rejected it as unsigned. Signed with the
+# helper entitlements and WITHOUT --deep, matching upstream step 2.
+if [[ -d "$APP/Contents/Library/cmux Computer Use.app" ]]; then
+  echo "    nested app: cmux Computer Use.app"
+  codesign "${COMMON[@]}" --entitlements "$HELPER_ENTITLEMENTS" \
+    "$APP/Contents/Library/cmux Computer Use.app"
+fi
 
 # 2. Plugins.
 if [[ -d "$APP/Contents/PlugIns" ]]; then
