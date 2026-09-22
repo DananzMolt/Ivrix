@@ -2,6 +2,28 @@
 
 All notable changes to cmux are documented here.
 
+## Ivrix [1.2.0] - 2026-09-22
+
+Ivrix catches up with two months of cmux, and the direction toggle moves to
+where it belongs.
+
+### Changed
+- **Rebuilt on current cmux.** Ivrix was sitting on cmux from 2026-07-26; it now
+  tracks cmux main as of 2026-09-21, 8,171 commits later. Everything upstream
+  shipped in between comes with it, and the Hebrew/BIDI work was merged onto the
+  new base rather than re-applied, so future catch-ups are ordinary merges.
+- **The RTL/LTR button moved to the far right of the title bar.** Upstream kept
+  adding buttons next to it, which squeezed it toward the middle of the window.
+  It now sits on its own at the trailing edge. `Ctrl+Cmd+H` and
+  View > Toggle Text Direction are unchanged.
+
+### Fixed
+- The direction button in the title bar responded to nothing when clicked, and
+  sat a few pixels below the other title bar controls.
+- Permission prompts ("a program running within Ivrix would like to…") say Ivrix
+  again in every language. Two months of new upstream prompts had arrived still
+  naming cmux.
+
 ## Ivrix [1.1.3] - 2026-07-31
 
 Typing ergonomics for a Hebrew keyboard: a shortcut for the direction toggle,
